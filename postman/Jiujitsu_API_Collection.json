@@ -226,7 +226,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"senhaAtual\": \"admin123\",\n    \"novaSenha\": \"newPassword123\"\n}"
+              "raw": "{\n    \"senhaAtual\": \"admin123\",\n    \"senhaNova\": \"newPassword123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/change-password",
