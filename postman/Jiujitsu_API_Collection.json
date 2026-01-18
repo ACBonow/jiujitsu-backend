@@ -152,7 +152,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"admin@academia.com\",\n    \"senha\": \"admin123\"\n}"
+              "raw": "{\n    \"email\": \"admin@leaodejuda.com.br\",\n    \"senha\": \"admin123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
