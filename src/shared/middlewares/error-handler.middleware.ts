@@ -53,8 +53,11 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
 
   // Prisma Validation Error
   if (err instanceof Prisma.PrismaClientValidationError) {
+    const message = config.server.isDevelopment
+      ? `Erro de validação de dados: ${err.message.split('\n').pop()}`
+      : 'Erro de validação de dados';
     return res.status(400).json(
-      error('Erro de validação de dados')
+      error(message)
     );
   }
 
