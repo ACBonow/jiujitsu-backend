@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { academiasService } from './academias.service';
-import { success, paginated } from '@/shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
 import { CreateAcademiaInput, UpdateAcademiaInput } from './academias.schemas';
 
 export class AcademiasController {

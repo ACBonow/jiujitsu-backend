@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service';
-import { success } from '@/shared/utils/api-response';
+import { success } from '../../shared/utils/api-response';
 import { LoginInput, RefreshTokenInput, ChangePasswordInput } from './auth.schemas';
 
 export class AuthController {

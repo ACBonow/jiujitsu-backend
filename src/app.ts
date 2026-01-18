@@ -1,17 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { errorHandler } from '@/shared/middlewares/error-handler.middleware';
-import { apiLimiter } from '@/shared/middlewares/rate-limit.middleware';
-import authRoutes from '@/modules/auth/auth.routes';
-import academiasRoutes from '@/modules/academias/academias.routes';
-import alunosRoutes from '@/modules/alunos/alunos.routes';
-import professoresRoutes from '@/modules/professores/professores.routes';
-import aulasRoutes from '@/modules/aulas/aulas.routes';
-import presencasRoutes from '@/modules/presencas/presencas.routes';
-import reservasRoutes from '@/modules/reservas/reservas.routes';
-import graduacoesRoutes from '@/modules/graduacoes/graduacoes.routes';
-import financeiroRoutes from '@/modules/financeiro/financeiro.routes';
+import { errorHandler } from './shared/middlewares/error-handler.middleware';
+import { apiLimiter } from './shared/middlewares/rate-limit.middleware';
+import authRoutes from './modules/auth/auth.routes';
+import academiasRoutes from './modules/academias/academias.routes';
+import alunosRoutes from './modules/alunos/alunos.routes';
+import professoresRoutes from './modules/professores/professores.routes';
+import aulasRoutes from './modules/aulas/aulas.routes';
+import presencasRoutes from './modules/presencas/presencas.routes';
+import reservasRoutes from './modules/reservas/reservas.routes';
+import graduacoesRoutes from './modules/graduacoes/graduacoes.routes';
+import financeiroRoutes from './modules/financeiro/financeiro.routes';
 
 const app = express();
 

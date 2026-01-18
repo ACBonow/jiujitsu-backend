@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { CONSTANTS } from '@/config/constants';
+import { CONSTANTS } from '../../config/constants';
 
 export interface PaginationParams {
   skip: number;

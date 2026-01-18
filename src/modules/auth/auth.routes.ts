@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { authController } from './auth.controller';
-import { validate } from '@/shared/middlewares/validation.middleware';
-import { authenticate } from '@/shared/middlewares/auth.middleware';
-import { loginLimiter } from '@/shared/middlewares/rate-limit.middleware';
+import { validate } from '../../shared/middlewares/validation.middleware';
+import { authenticate } from '../../shared/middlewares/auth.middleware';
+import { loginLimiter } from '../../shared/middlewares/rate-limit.middleware';
 import { loginSchema, refreshTokenSchema, changePasswordSchema } from './auth.schemas';
 
 const router = Router();

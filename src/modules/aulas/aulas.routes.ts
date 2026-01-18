@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { aulasController } from './aulas.controller';
-import { validate, validateParams, validateQuery } from '@/shared/middlewares/validation.middleware';
-import { authenticate, authorize } from '@/shared/middlewares/auth.middleware';
+import { validate, validateParams, validateQuery } from '../../shared/middlewares/validation.middleware';
+import { authenticate, authorize } from '../../shared/middlewares/auth.middleware';
 import {
   createTemplateAulaSchema,
   updateTemplateAulaSchema,

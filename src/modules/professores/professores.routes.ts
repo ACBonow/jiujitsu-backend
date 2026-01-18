@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { professoresController } from './professores.controller';
-import { validate, validateParams, validateQuery } from '@/shared/middlewares/validation.middleware';
-import { authenticate, authorize } from '@/shared/middlewares/auth.middleware';
+import { validate, validateParams, validateQuery } from '../../shared/middlewares/validation.middleware';
+import { authenticate, authorize } from '../../shared/middlewares/auth.middleware';
 import {
   createProfessorSchema,
   updateProfessorSchema,

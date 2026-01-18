@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { config } from '@/config/env';
+import { config } from '../../config/env';
 import { ApiError } from './api-error';
 
 export interface JWTPayload {

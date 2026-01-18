@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { graduacoesService } from './graduacoes.service';
-import { success, paginated } from '@/shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
 import { CreateGraduacaoInput, GraduacaoQueryInput } from './graduacoes.schemas';
 
 export class GraduacoesController {

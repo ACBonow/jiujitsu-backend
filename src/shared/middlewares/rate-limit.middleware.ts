@@ -1,5 +1,5 @@
 import rateLimit from 'express-rate-limit';
-import { CONSTANTS } from '@/config/constants';
+import { CONSTANTS } from '../../config/constants';
 
 // Rate limit geral para a API
 export const apiLimiter = rateLimit({

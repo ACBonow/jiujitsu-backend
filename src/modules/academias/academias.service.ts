@@ -1,6 +1,6 @@
-import { prisma } from '@/config/database';
-import { ApiError } from '@/shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '@/shared/utils/pagination';
+import { prisma } from '../../config/database';
+import { ApiError } from '../../shared/utils/api-error';
+import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
 import { CreateAcademiaInput, UpdateAcademiaInput } from './academias.schemas';
 import { AcademiaResponse, AcademiaWithStats } from './academias.types';
 

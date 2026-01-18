@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { reservasService } from './reservas.service';
-import { success, paginated } from '@/shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
 import { CreateReservaInput, ReservaQueryInput } from './reservas.schemas';
 
 export class ReservasController {

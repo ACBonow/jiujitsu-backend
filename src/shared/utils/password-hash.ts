@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { CONSTANTS } from '@/config/constants';
+import { CONSTANTS } from '../../config/constants';
 
 export const hashPassword = async (senha: string): Promise<string> => {
   return bcrypt.hash(senha, CONSTANTS.SALT_ROUNDS_BCRYPT);

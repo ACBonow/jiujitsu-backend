@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { alunosService } from './alunos.service';
-import { success, paginated } from '@/shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
 import { CreateAlunoInput, UpdateAlunoInput, AlunoQueryInput } from './alunos.schemas';
 import { StatusAluno } from '@prisma/client';
 

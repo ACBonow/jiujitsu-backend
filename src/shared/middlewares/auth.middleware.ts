@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Perfil } from '@prisma/client';
-import { verifyAccessToken } from '@/shared/utils/jwt-helper';
-import { ApiError } from '@/shared/utils/api-error';
-import { prisma } from '@/config/database';
+import { verifyAccessToken } from '../utils/jwt-helper';
+import { ApiError } from '../utils/api-error';
+import { prisma } from '../../config/database';
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {

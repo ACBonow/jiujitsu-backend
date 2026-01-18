@@ -1,12 +1,12 @@
-import { prisma } from '@/config/database';
-import { ApiError } from '@/shared/utils/api-error';
-import { comparePassword, hashPassword } from '@/shared/utils/password-hash';
+import { prisma } from '../../config/database';
+import { ApiError } from '../../shared/utils/api-error';
+import { comparePassword, hashPassword } from '../../shared/utils/password-hash';
 import {
   generateAccessToken,
   generateRefreshToken,
   verifyRefreshToken,
   JWTPayload,
-} from '@/shared/utils/jwt-helper';
+} from '../../shared/utils/jwt-helper';
 import { LoginResponse, AuthTokens } from './auth.types';
 
 export class AuthService {

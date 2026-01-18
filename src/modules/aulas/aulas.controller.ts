@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { aulasService } from './aulas.service';
-import { success, paginated } from '@/shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
 import {
   CreateTemplateAulaInput,
   UpdateTemplateAulaInput,

@@ -1,6 +1,6 @@
-import { prisma } from '@/config/database';
-import { ApiError } from '@/shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '@/shared/utils/pagination';
+import { prisma } from '../../config/database';
+import { ApiError } from '../../shared/utils/api-error';
+import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
 import { Modalidade, StatusMatricula, StatusMensalidade } from '@prisma/client';
 import { setDate, addMonths, startOfMonth, endOfMonth, format } from 'date-fns';
 import {

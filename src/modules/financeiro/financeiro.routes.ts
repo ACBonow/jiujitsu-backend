@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { planosController, matriculasController, mensalidadesController } from './financeiro.controller';
-import { validate, validateParams, validateQuery } from '@/shared/middlewares/validation.middleware';
-import { authenticate, authorize } from '@/shared/middlewares/auth.middleware';
+import { validate, validateParams, validateQuery } from '../../shared/middlewares/validation.middleware';
+import { authenticate, authorize } from '../../shared/middlewares/auth.middleware';
 import {
   createPlanoSchema,
   updatePlanoSchema,

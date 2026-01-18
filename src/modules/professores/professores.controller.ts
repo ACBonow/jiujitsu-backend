@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { professoresService } from './professores.service';
-import { success, paginated } from '@/shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
 import { CreateProfessorInput, UpdateProfessorInput, ProfessorQueryInput } from './professores.schemas';
 
 export class ProfessoresController {

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { presencasService } from './presencas.service';
-import { success, paginated } from '@/shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
 import {
   CreatePresencaInput,
   RegistrarPresencasEmLoteInput,

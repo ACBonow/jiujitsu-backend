@@ -1,6 +1,6 @@
-import { prisma } from '@/config/database';
-import { ApiError } from '@/shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '@/shared/utils/pagination';
+import { prisma } from '../../config/database';
+import { ApiError } from '../../shared/utils/api-error';
+import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
 import { DiaSemana, CategoriaTurma, Modalidade, StatusAula } from '@prisma/client';
 import {
   addDays,

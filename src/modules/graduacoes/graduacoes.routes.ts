@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { graduacoesController } from './graduacoes.controller';
-import { validate, validateParams, validateQuery } from '@/shared/middlewares/validation.middleware';
-import { authenticate, authorize } from '@/shared/middlewares/auth.middleware';
+import { validate, validateParams, validateQuery } from '../../shared/middlewares/validation.middleware';
+import { authenticate, authorize } from '../../shared/middlewares/auth.middleware';
 import {
   createGraduacaoSchema,
   graduacaoIdParamSchema,

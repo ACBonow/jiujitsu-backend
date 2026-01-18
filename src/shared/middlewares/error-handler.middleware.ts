@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
-import { ApiError } from '@/shared/utils/api-error';
-import { error } from '@/shared/utils/api-response';
-import { config } from '@/config/env';
+import { ApiError } from '../utils/api-error';
+import { error } from '../utils/api-response';
+import { config } from '../../config/env';
 
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   // Log do erro (em produção, enviar para serviço de log)

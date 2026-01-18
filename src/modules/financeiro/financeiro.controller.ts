@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { planosService, matriculasService, mensalidadesService } from './financeiro.service';
-import { success, paginated } from '@/shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
 import {
   CreatePlanoInput,
   UpdatePlanoInput,

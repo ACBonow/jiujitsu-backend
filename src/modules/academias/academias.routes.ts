@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { academiasController } from './academias.controller';
-import { validate, validateParams } from '@/shared/middlewares/validation.middleware';
-import { authenticate, authorize } from '@/shared/middlewares/auth.middleware';
+import { validate, validateParams } from '../../shared/middlewares/validation.middleware';
+import { authenticate, authorize } from '../../shared/middlewares/auth.middleware';
 import {
   createAcademiaSchema,
   updateAcademiaSchema,
