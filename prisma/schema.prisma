@@ -1,0 +1,659 @@
+// ============================================================================
+// SCHEMA PRISMA - SISTEMA DE GESTÃO DE ACADEMIAS DE ARTES MARCIAIS
+// Versão: 1.0
+// Baseado no PRD v1.1
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // Para conexão direta (migrations) - Neon DB
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Perfil {
+  ADMIN
+  PROFESSOR
+  RECEPCIONISTA
+  ALUNO
+}
+
+enum Faixa {
+  // Faixas Kids (4-15 anos)
+  BRANCA
+  CINZA
+  AMARELA
+  LARANJA
+  VERDE
+  // Faixas Adulto (16+ anos)
+  AZUL
+  ROXA
+  MARROM
+  PRETA
+  // Faixas Coral e Vermelha
+  CORAL_PRETA_VERMELHA  // 7º grau
+  CORAL_BRANCA_VERMELHA // 8º grau
+  VERMELHA              // 9º e 10º grau
+}
+
+enum StatusAluno {
+  ATIVO
+  INATIVO
+  INADIMPLENTE
+}
+
+enum CategoriaIdade {
+  // Kids
+  PRE_MIRIM      // 4-5 anos
+  MIRIM          // 6-7 anos
+  INFANTIL       // 8-9 anos
+  INFANTO_JUVENIL // 10-11 anos
+  JUVENIL        // 12-13 anos
+  TEEN           // 14-15 anos
+  // Adulto
+  ADULTO         // 18-29 anos
+  MASTER_1       // 30-35 anos
+  MASTER_2       // 36-40 anos
+  MASTER_3       // 41-45 anos
+  MASTER_4       // 46-50 anos
+  MASTER_5       // 51-55 anos
+  MASTER_6       // 56-60 anos
+  MASTER_7       // 61+ anos
+}
+
+enum CategoriaPeso {
+  // Masculino e Feminino
+  GALO
+  PLUMA
+  PENA
+  LEVE
+  MEDIO
+  MEIO_PESADO
+  PESADO
+  SUPER_PESADO
+  PESADISSIMO    // Apenas masculino
+}
+
+enum Sexo {
+  MASCULINO
+  FEMININO
+}
+
+enum Modalidade {
+  JIUJITSU
+  MUAY_THAI
+  JUDO
+  MMA
+  WRESTLING
+  BOXE
+  KICKBOXING
+  NO_GI
+}
+
+enum CategoriaTurma {
+  ADULTO_MASCULINO
+  ADULTO_FEMININO
+  ADULTO_MISTO
+  ADULTO_INICIANTE
+  KIDS
+  COMPETICAO
+  NOGI
+}
+
+enum TipoAula {
+  PADRAO
+  EXTRA
+  PARTICULAR
+}
+
+enum StatusAula {
+  AGENDADA
+  EM_ANDAMENTO
+  CONCLUIDA
+  CANCELADA
+}
+
+enum DiaSemana {
+  DOMINGO
+  SEGUNDA
+  TERCA
+  QUARTA
+  QUINTA
+  SEXTA
+  SABADO
+}
+
+enum StatusReserva {
+  CONFIRMADA
+  ESPERA
+  CANCELADA
+  EXPIRADA
+  FALTOU
+}
+
+enum StatusMatricula {
+  ATIVA
+  SUSPENSA
+  CANCELADA
+}
+
+enum StatusMensalidade {
+  PENDENTE
+  PAGO
+  ATRASADO
+}
+
+enum FormaPagamento {
+  DINHEIRO
+  PIX
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+  TRANSFERENCIA
+  BOLETO
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// ACADEMIA / UNIDADE
+// ----------------------------------------------------------------------------
+model Academia {
+  id        String   @id @default(cuid())
+  nome      String
+  cnpj      String?  @unique
+  telefone  String?
+  email     String?
+  
+  // Endereço (JSON para flexibilidade)
+  logradouro    String?
+  numero        String?
+  complemento   String?
+  bairro        String?
+  cidade        String?
+  estado        String?
+  cep           String?
+  
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  usuarios            Usuario[]
+  aulas               Aula[]
+  templatesAula       TemplateAula[]
+  matriculas          Matricula[]
+  professoresAcademia ProfessorAcademia[]
+  planosAcademia      PlanoAcademia[]
+
+  @@map("academias")
+}
+
+// ----------------------------------------------------------------------------
+// PESSOA (Base para Usuario, Aluno, Professor)
+// ----------------------------------------------------------------------------
+model Pessoa {
+  id             String    @id @default(cuid())
+  nome           String
+  telefone       String?
+  email          String?   @unique
+  cpf            String?   @unique
+  dataNascimento DateTime?
+  sexo           Sexo?
+  
+  // Endereço
+  logradouro     String?
+  numero         String?
+  complemento    String?
+  bairro         String?
+  cidade         String?
+  estado         String?
+  cep            String?
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relacionamentos
+  usuario   Usuario?
+  aluno     Aluno?
+  professor Professor?
+
+  @@index([nome])
+  @@index([cpf])
+  @@index([email])
+  @@map("pessoas")
+}
+
+// ----------------------------------------------------------------------------
+// USUARIO (Autenticação e Acesso)
+// ----------------------------------------------------------------------------
+model Usuario {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  senha     String   // Hash bcrypt
+  perfil    Perfil
+  ativo     Boolean  @default(true)
+  
+  // Relacionamentos
+  pessoaId    String    @unique
+  pessoa      Pessoa    @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
+  
+  academiaId  String?   // Academia vinculada (null para Admin geral)
+  academia    Academia? @relation(fields: [academiaId], references: [id])
+  
+  // Registros feitos por este usuário
+  presencasRegistradas Presenca[] @relation("RegistradoPor")
+  
+  // Tokens e sessões
+  refreshToken String?
+  lastLogin    DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([perfil])
+  @@map("usuarios")
+}
+
+// ----------------------------------------------------------------------------
+// ALUNO
+// ----------------------------------------------------------------------------
+model Aluno {
+  id                  String        @id @default(cuid())
+  
+  // Dados específicos do aluno
+  nomeResponsavel     String?       // Obrigatório para menores de 18
+  telefoneResponsavel String?
+  
+  // Graduação
+  faixa               Faixa         @default(BRANCA)
+  graus               Int           @default(0) // 0-4 (preta até 6)
+  dataUltimaPromocao  DateTime?
+  dataMatricula       DateTime      @default(now())
+  aulasDesdePromocao  Int           @default(0)
+  
+  // Categorias IBJJF
+  peso                Float?        // em kg
+  categoriaIdade      CategoriaIdade?
+  categoriaPeso       CategoriaPeso?
+  
+  // Status e controle
+  status              StatusAluno   @default(ATIVO)
+  faltasReservas      Int           @default(0) // Contador de faltas em reservas
+  
+  // Observações gerais
+  observacoes         String?
+  
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  // Relacionamentos
+  pessoaId   String   @unique
+  pessoa     Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
+  
+  // Um professor pode ser aluno também
+  professor  Professor?
+  
+  // Histórico e atividades
+  graduacoes  Graduacao[]
+  presencas   Presenca[]
+  reservas    Reserva[]
+  matriculas  Matricula[]
+
+  @@index([status])
+  @@index([faixa])
+  @@index([dataMatricula])
+  @@map("alunos")
+}
+
+// ----------------------------------------------------------------------------
+// PROFESSOR
+// ----------------------------------------------------------------------------
+model Professor {
+  id          String       @id @default(cuid())
+  modalidades Modalidade[] // Array de modalidades que leciona
+  ativo       Boolean      @default(true)
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relacionamentos
+  pessoaId String @unique
+  pessoa   Pessoa @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
+  
+  // Professor pode ser aluno (para controle de graduação própria)
+  alunoId String? @unique
+  aluno   Aluno?  @relation(fields: [alunoId], references: [id])
+  
+  // Vínculo com academias (N:N)
+  academias ProfessorAcademia[]
+  
+  // Aulas
+  aulasComoProfessor    Aula[]         @relation("ProfessorPrincipal")
+  aulasComoSubstituto   Aula[]         @relation("ProfessorSubstituto")
+  templatesAula         TemplateAula[]
+
+  @@map("professores")
+}
+
+// ----------------------------------------------------------------------------
+// PROFESSOR <-> ACADEMIA (Tabela associativa N:N)
+// ----------------------------------------------------------------------------
+model ProfessorAcademia {
+  professorId String
+  professor   Professor @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  
+  academiaId  String
+  academia    Academia  @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  
+  ativo       Boolean   @default(true)
+  dataVinculo DateTime  @default(now())
+
+  @@id([professorId, academiaId])
+  @@map("professores_academias")
+}
+
+// ----------------------------------------------------------------------------
+// GRADUAÇÃO (Histórico de promoções)
+// ----------------------------------------------------------------------------
+model Graduacao {
+  id              String   @id @default(cuid())
+  
+  faixaAnterior   Faixa
+  faixaNova       Faixa
+  grausAnteriores Int
+  grausNovos      Int
+  dataPromocao    DateTime @default(now())
+  observacao      String?
+  
+  // Relacionamentos
+  alunoId String
+  aluno   Aluno  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([alunoId])
+  @@index([dataPromocao])
+  @@map("graduacoes")
+}
+
+// ----------------------------------------------------------------------------
+// TEMPLATE DE AULA (Grade semanal)
+// ----------------------------------------------------------------------------
+model TemplateAula {
+  id           String         @id @default(cuid())
+  
+  diaSemana    DiaSemana
+  horarioInicio String        // "HH:MM" formato
+  duracao      Int            @default(60) // minutos
+  
+  categoria    CategoriaTurma
+  modalidade   Modalidade     @default(JIUJITSU)
+  limiteAlunos Int?           // null = sem limite
+  
+  ativo        Boolean        @default(true)
+  
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Relacionamentos
+  academiaId  String
+  academia    Academia   @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  
+  professorId String
+  professor   Professor  @relation(fields: [professorId], references: [id])
+
+  @@index([academiaId, diaSemana])
+  @@index([professorId])
+  @@map("templates_aula")
+}
+
+// ----------------------------------------------------------------------------
+// AULA (Instância de aula)
+// ----------------------------------------------------------------------------
+model Aula {
+  id           String      @id @default(cuid())
+  
+  dataHora     DateTime
+  duracao      Int         @default(60) // minutos
+  
+  categoria    CategoriaTurma
+  modalidade   Modalidade  @default(JIUJITSU)
+  tipoAula     TipoAula    @default(PADRAO)
+  limiteAlunos Int?        // null = sem limite
+  
+  status       StatusAula  @default(AGENDADA)
+  observacoes  String?
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Relacionamentos
+  academiaId            String
+  academia              Academia   @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  
+  professorId           String
+  professor             Professor  @relation("ProfessorPrincipal", fields: [professorId], references: [id])
+  
+  professorSubstitutoId String?
+  professorSubstituto   Professor? @relation("ProfessorSubstituto", fields: [professorSubstitutoId], references: [id])
+  
+  // Presenças e reservas desta aula
+  presencas Presenca[]
+  reservas  Reserva[]
+
+  @@index([academiaId, dataHora])
+  @@index([professorId])
+  @@index([status])
+  @@index([dataHora])
+  @@map("aulas")
+}
+
+// ----------------------------------------------------------------------------
+// PRESENÇA
+// ----------------------------------------------------------------------------
+model Presenca {
+  id            String   @id @default(cuid())
+  dataRegistro  DateTime @default(now())
+  
+  // Relacionamentos
+  aulaId  String
+  aula    Aula   @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  
+  alunoId String
+  aluno   Aluno  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  
+  // Quem registrou a presença
+  registradoPorId String
+  registradoPor   Usuario @relation("RegistradoPor", fields: [registradoPorId], references: [id])
+
+  @@unique([aulaId, alunoId]) // Um aluno só pode ter uma presença por aula
+  @@index([alunoId])
+  @@index([aulaId])
+  @@index([dataRegistro])
+  @@map("presencas")
+}
+
+// ----------------------------------------------------------------------------
+// RESERVA
+// ----------------------------------------------------------------------------
+model Reserva {
+  id             String        @id @default(cuid())
+  
+  status         StatusReserva @default(ESPERA)
+  posicaoFila    Int?          // Posição na lista de espera
+  dataReserva    DateTime      @default(now())
+  dataConfirmacao DateTime?
+  dataExpiracao  DateTime?     // Quando expira a confirmação (15 min)
+  
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relacionamentos
+  aulaId  String
+  aula    Aula   @relation(fields: [aulaId], references: [id], onDelete: Cascade)
+  
+  alunoId String
+  aluno   Aluno  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+
+  @@unique([aulaId, alunoId]) // Um aluno só pode ter uma reserva por aula
+  @@index([aulaId, status])
+  @@index([alunoId])
+  @@index([status])
+  @@map("reservas")
+}
+
+// ----------------------------------------------------------------------------
+// PLANO
+// ----------------------------------------------------------------------------
+model Plano {
+  id          String       @id @default(cuid())
+  
+  nome        String
+  descricao   String?
+  valorBase   Decimal      @db.Decimal(10, 2)
+  modalidades Modalidade[] // Modalidades incluídas no plano
+  
+  ativo       Boolean      @default(true)
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relacionamentos
+  matriculas      Matricula[]
+  planosAcademia  PlanoAcademia[]
+
+  @@map("planos")
+}
+
+// ----------------------------------------------------------------------------
+// PLANO <-> ACADEMIA (Tabela associativa N:N)
+// ----------------------------------------------------------------------------
+model PlanoAcademia {
+  planoId    String
+  plano      Plano    @relation(fields: [planoId], references: [id], onDelete: Cascade)
+  
+  academiaId String
+  academia   Academia @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  
+  // Pode ter valor diferenciado por academia
+  valorPersonalizado Decimal? @db.Decimal(10, 2)
+  ativo              Boolean  @default(true)
+
+  @@id([planoId, academiaId])
+  @@map("planos_academias")
+}
+
+// ----------------------------------------------------------------------------
+// MATRÍCULA (Contrato do aluno)
+// ----------------------------------------------------------------------------
+model Matricula {
+  id            String          @id @default(cuid())
+  
+  valorFinal    Decimal         @db.Decimal(10, 2)
+  desconto      Decimal?        @db.Decimal(10, 2)
+  diaVencimento Int             // Dia do mês (1-31)
+  dataInicio    DateTime        @default(now())
+  dataFim       DateTime?       // null = contrato ativo por tempo indeterminado
+  
+  status        StatusMatricula @default(ATIVA)
+  observacoes   String?
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relacionamentos
+  alunoId    String
+  aluno      Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  
+  academiaId String
+  academia   Academia @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  
+  planoId    String
+  plano      Plano    @relation(fields: [planoId], references: [id])
+  
+  // Mensalidades geradas
+  mensalidades Mensalidade[]
+
+  @@index([alunoId])
+  @@index([academiaId])
+  @@index([status])
+  @@map("matriculas")
+}
+
+// ----------------------------------------------------------------------------
+// MENSALIDADE
+// ----------------------------------------------------------------------------
+model Mensalidade {
+  id              String            @id @default(cuid())
+  
+  mesReferencia   String            // "YYYY-MM" formato
+  valor           Decimal           @db.Decimal(10, 2)
+  dataVencimento  DateTime
+  dataPagamento   DateTime?
+  formaPagamento  FormaPagamento?
+  
+  status          StatusMensalidade @default(PENDENTE)
+  observacoes     String?
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relacionamentos
+  matriculaId String
+  matricula   Matricula @relation(fields: [matriculaId], references: [id], onDelete: Cascade)
+
+  @@unique([matriculaId, mesReferencia]) // Uma mensalidade por mês por matrícula
+  @@index([status])
+  @@index([dataVencimento])
+  @@index([mesReferencia])
+  @@map("mensalidades")
+}
+
+// ----------------------------------------------------------------------------
+// CONFIGURAÇÕES DO SISTEMA
+// ----------------------------------------------------------------------------
+model Configuracao {
+  id        String   @id @default(cuid())
+  chave     String   @unique
+  valor     String
+  descricao String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("configuracoes")
+}
+
+// ----------------------------------------------------------------------------
+// LOG DE AUDITORIA (Opcional - para rastreabilidade)
+// ----------------------------------------------------------------------------
+model AuditLog {
+  id         String   @id @default(cuid())
+  
+  tabela     String   // Nome da tabela afetada
+  registroId String   // ID do registro afetado
+  acao       String   // CREATE, UPDATE, DELETE
+  dadosAntigos Json?  // Estado anterior (para UPDATE/DELETE)
+  dadosNovos   Json?  // Estado novo (para CREATE/UPDATE)
+  
+  usuarioId  String?  // Quem fez a ação
+  ip         String?
+  userAgent  String?
+  
+  createdAt  DateTime @default(now())
+
+  @@index([tabela, registroId])
+  @@index([usuarioId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
