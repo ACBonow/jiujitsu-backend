@@ -1,0 +1,1584 @@
+{
+  "info": {
+    "_postman_id": "jiujitsu-api-collection",
+    "name": "Jiujitsu Backend API",
+    "description": "Collection completa para testar a API de gestão de academias de Jiu-Jitsu",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "academiaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "alunoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "professorId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "aulaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateAulaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reservaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "presencaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "graduacaoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "planoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "matriculaId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "mensalidadeId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.tokens) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.tokens.accessToken);",
+                  "        pm.collectionVariables.set('refreshToken', response.data.tokens.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@academia.com\",\n    \"senha\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Me (Dados do usuário logado)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.tokens) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.tokens.accessToken);",
+                  "        pm.collectionVariables.set('refreshToken', response.data.tokens.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"senhaAtual\": \"admin123\",\n    \"novaSenha\": \"newPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Academias",
+      "item": [
+        {
+          "name": "Listar Academias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/academias?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "academias"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "ativo", "value": "true", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Academia por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/academias/{{academiaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "academias", "{{academiaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Criar Academia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('academiaId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Academia Teste\",\n    \"endereco\": \"Rua Teste, 123\",\n    \"telefone\": \"11999999999\",\n    \"email\": \"teste@academia.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/academias",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "academias"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Academia",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Academia Teste Atualizada\",\n    \"endereco\": \"Rua Teste, 456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/academias/{{academiaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "academias", "{{academiaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Status Academia",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/academias/{{academiaId}}/toggle-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "academias", "{{academiaId}}", "toggle-status"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Academia",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/academias/{{academiaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "academias", "{{academiaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alunos",
+      "item": [
+        {
+          "name": "Listar Alunos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/alunos?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alunos"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "status", "value": "ATIVO", "disabled": true },
+                { "key": "faixa", "value": "BRANCA", "disabled": true },
+                { "key": "academiaId", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Aluno por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/alunos/{{alunoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alunos", "{{alunoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Criar Aluno",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('alunoId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Aluno Teste\",\n    \"email\": \"aluno.teste@email.com\",\n    \"cpf\": \"12345678901\",\n    \"dataNascimento\": \"2000-01-15\",\n    \"telefone\": \"11988887777\",\n    \"endereco\": \"Rua do Aluno, 100\",\n    \"faixa\": \"BRANCA\",\n    \"graus\": 0,\n    \"academiaId\": \"{{academiaId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/alunos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alunos"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Aluno",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Aluno Teste Atualizado\",\n    \"telefone\": \"11977776666\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/alunos/{{alunoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alunos", "{{alunoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Status do Aluno",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"INATIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/alunos/{{alunoId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alunos", "{{alunoId}}", "status"]
+            }
+          }
+        },
+        {
+          "name": "Listar Presenças do Aluno",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/alunos/{{alunoId}}/presencas?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alunos", "{{alunoId}}", "presencas"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Graduações do Aluno",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/alunos/{{alunoId}}/graduacoes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alunos", "{{alunoId}}", "graduacoes"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Aluno",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/alunos/{{alunoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "alunos", "{{alunoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Professores",
+      "item": [
+        {
+          "name": "Listar Professores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/professores?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "professores"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "ativo", "value": "true", "disabled": true },
+                { "key": "modalidade", "value": "JIUJITSU", "disabled": true },
+                { "key": "academiaId", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Professor por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/professores/{{professorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "professores", "{{professorId}}"]
+            }
+          }
+        },
+        {
+          "name": "Criar Professor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('professorId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Professor Teste\",\n    \"email\": \"professor.teste@email.com\",\n    \"cpf\": \"98765432101\",\n    \"telefone\": \"11966665555\",\n    \"especialidade\": \"Jiu-Jitsu\",\n    \"modalidades\": [\"JIUJITSU\"],\n    \"cref\": \"123456-G/SP\",\n    \"academiaIds\": [\"{{academiaId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/professores",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "professores"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Professor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Professor Teste Atualizado\",\n    \"especialidade\": \"Jiu-Jitsu e MMA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/professores/{{professorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "professores", "{{professorId}}"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Status Professor",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/professores/{{professorId}}/toggle-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "professores", "{{professorId}}", "toggle-status"]
+            }
+          }
+        },
+        {
+          "name": "Vincular Professor à Academia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"academiaId\": \"{{academiaId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/professores/{{professorId}}/academias",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "professores", "{{professorId}}", "academias"]
+            }
+          }
+        },
+        {
+          "name": "Desvincular Professor da Academia",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/professores/{{professorId}}/academias/{{academiaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "professores", "{{professorId}}", "academias", "{{academiaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Professor",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/professores/{{professorId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "professores", "{{professorId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Aulas - Templates",
+      "item": [
+        {
+          "name": "Listar Templates de Aula",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/templates?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "templates"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "academiaId", "value": "", "disabled": true },
+                { "key": "professorId", "value": "", "disabled": true },
+                { "key": "diaSemana", "value": "SEGUNDA", "disabled": true },
+                { "key": "categoria", "value": "ADULTO", "disabled": true },
+                { "key": "ativo", "value": "true", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Template por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/templates/{{templateAulaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "templates", "{{templateAulaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Criar Template de Aula",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('templateAulaId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"academiaId\": \"{{academiaId}}\",\n    \"professorId\": \"{{professorId}}\",\n    \"diaSemana\": \"SEGUNDA\",\n    \"horario\": \"19:00\",\n    \"duracao\": 60,\n    \"categoria\": \"ADULTO\",\n    \"modalidade\": \"JIUJITSU\",\n    \"limiteAlunos\": 20,\n    \"nome\": \"Aula Noturna\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "templates"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Template de Aula",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Aula Noturna Avançada\",\n    \"limiteAlunos\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/templates/{{templateAulaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "templates", "{{templateAulaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Template de Aula",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/templates/{{templateAulaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "templates", "{{templateAulaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Aulas",
+      "item": [
+        {
+          "name": "Listar Aulas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "academiaId", "value": "", "disabled": true },
+                { "key": "professorId", "value": "", "disabled": true },
+                { "key": "categoria", "value": "ADULTO", "disabled": true },
+                { "key": "modalidade", "value": "JIUJITSU", "disabled": true },
+                { "key": "status", "value": "AGENDADA", "disabled": true },
+                { "key": "dataInicio", "value": "2024-01-01", "disabled": true },
+                { "key": "dataFim", "value": "2024-12-31", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Aula por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/{{aulaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "{{aulaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Gerar Aulas a partir de Templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"academiaId\": \"{{academiaId}}\",\n    \"dataInicio\": \"2024-01-01\",\n    \"dataFim\": \"2024-01-31\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/gerar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "gerar"]
+            }
+          }
+        },
+        {
+          "name": "Criar Aula Avulsa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('aulaId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"academiaId\": \"{{academiaId}}\",\n    \"professorId\": \"{{professorId}}\",\n    \"dataHora\": \"2024-01-15T19:00:00.000Z\",\n    \"duracao\": 60,\n    \"categoria\": \"ADULTO\",\n    \"modalidade\": \"JIUJITSU\",\n    \"limiteAlunos\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Aula",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"duracao\": 90,\n    \"limiteAlunos\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/{{aulaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "{{aulaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Iniciar Aula",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/{{aulaId}}/iniciar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "{{aulaId}}", "iniciar"]
+            }
+          }
+        },
+        {
+          "name": "Concluir Aula",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/{{aulaId}}/concluir",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "{{aulaId}}", "concluir"]
+            }
+          }
+        },
+        {
+          "name": "Cancelar Aula",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/{{aulaId}}/cancelar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "{{aulaId}}", "cancelar"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Aula",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/aulas/{{aulaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "aulas", "{{aulaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservas",
+      "item": [
+        {
+          "name": "Listar Reservas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "aulaId", "value": "", "disabled": true },
+                { "key": "alunoId", "value": "", "disabled": true },
+                { "key": "status", "value": "CONFIRMADA", "disabled": true },
+                { "key": "dataInicio", "value": "2024-01-01", "disabled": true },
+                { "key": "dataFim", "value": "2024-12-31", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Reservas por Aula",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas/aula/{{aulaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas", "aula", "{{aulaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Reserva por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas/{{reservaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas", "{{reservaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Criar Reserva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('reservaId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"aulaId\": \"{{aulaId}}\",\n    \"alunoId\": \"{{alunoId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas"]
+            }
+          }
+        },
+        {
+          "name": "Cancelar Reserva",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas/{{reservaId}}/cancelar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas", "{{reservaId}}", "cancelar"]
+            }
+          }
+        },
+        {
+          "name": "Confirmar Reserva em Espera",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas/{{reservaId}}/confirmar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas", "{{reservaId}}", "confirmar"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Reserva",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservas/{{reservaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reservas", "{{reservaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Presenças",
+      "item": [
+        {
+          "name": "Listar Presenças",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/presencas?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "presencas"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "aulaId", "value": "", "disabled": true },
+                { "key": "alunoId", "value": "", "disabled": true },
+                { "key": "academiaId", "value": "", "disabled": true },
+                { "key": "dataInicio", "value": "2024-01-01", "disabled": true },
+                { "key": "dataFim", "value": "2024-12-31", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Presenças por Aula",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/presencas/aula/{{aulaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "presencas", "aula", "{{aulaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Presença por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/presencas/{{presencaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "presencas", "{{presencaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Presença Individual",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('presencaId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"aulaId\": \"{{aulaId}}\",\n    \"alunoId\": \"{{alunoId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/presencas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "presencas"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Presenças em Lote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"aulaId\": \"{{aulaId}}\",\n    \"alunoIds\": [\"{{alunoId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/presencas/lote",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "presencas", "lote"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Presença",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/presencas/{{presencaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "presencas", "{{presencaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Graduações",
+      "item": [
+        {
+          "name": "Listar Graduações",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/graduacoes?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "graduacoes"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "alunoId", "value": "", "disabled": true },
+                { "key": "faixa", "value": "AZUL", "disabled": true },
+                { "key": "dataInicio", "value": "2024-01-01", "disabled": true },
+                { "key": "dataFim", "value": "2024-12-31", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Graduações por Aluno",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/graduacoes/aluno/{{alunoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "graduacoes", "aluno", "{{alunoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Graduação por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/graduacoes/{{graduacaoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "graduacoes", "{{graduacaoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Promoção",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('graduacaoId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"alunoId\": \"{{alunoId}}\",\n    \"novaFaixa\": \"AZUL\",\n    \"graus\": 0,\n    \"observacoes\": \"Promoção por mérito\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/graduacoes",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "graduacoes"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Graduação",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/graduacoes/{{graduacaoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "graduacoes", "{{graduacaoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Financeiro - Planos",
+      "item": [
+        {
+          "name": "Listar Planos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/planos?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "planos"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "ativo", "value": "true", "disabled": true },
+                { "key": "modalidade", "value": "JIUJITSU", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Plano por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/planos/{{planoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "planos", "{{planoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Criar Plano",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('planoId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Plano Mensal\",\n    \"descricao\": \"Plano mensal com acesso ilimitado\",\n    \"valor\": 150.00,\n    \"duracao\": 1,\n    \"modalidades\": [\"JIUJITSU\"],\n    \"academiaId\": \"{{academiaId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/planos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "planos"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Plano",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Plano Mensal Premium\",\n    \"valor\": 180.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/planos/{{planoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "planos", "{{planoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Plano",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/planos/{{planoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "planos", "{{planoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Financeiro - Matrículas",
+      "item": [
+        {
+          "name": "Listar Matrículas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/matriculas?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "matriculas"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "alunoId", "value": "", "disabled": true },
+                { "key": "academiaId", "value": "", "disabled": true },
+                { "key": "status", "value": "ATIVA", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Matrícula por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/matriculas/{{matriculaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "matriculas", "{{matriculaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Criar Matrícula",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.id) {",
+                  "        pm.collectionVariables.set('matriculaId', response.data.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"alunoId\": \"{{alunoId}}\",\n    \"academiaId\": \"{{academiaId}}\",\n    \"planoId\": \"{{planoId}}\",\n    \"diaVencimento\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/matriculas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "matriculas"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Matrícula",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"diaVencimento\": 15,\n    \"desconto\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/matriculas/{{matriculaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "matriculas", "{{matriculaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cancelar Matrícula",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/matriculas/{{matriculaId}}/cancelar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "matriculas", "{{matriculaId}}", "cancelar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Financeiro - Mensalidades",
+      "item": [
+        {
+          "name": "Listar Mensalidades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/mensalidades?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "mensalidades"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "matriculaId", "value": "", "disabled": true },
+                { "key": "alunoId", "value": "", "disabled": true },
+                { "key": "academiaId", "value": "", "disabled": true },
+                { "key": "status", "value": "PENDENTE", "disabled": true },
+                { "key": "mesReferencia", "value": "2024-01", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar Mensalidade por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/mensalidades/{{mensalidadeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "mensalidades", "{{mensalidadeId}}"]
+            }
+          }
+        },
+        {
+          "name": "Gerar Mensalidades do Mês",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"mesReferencia\": \"2024-01\",\n    \"academiaId\": \"{{academiaId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/mensalidades/gerar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "mensalidades", "gerar"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Pagamento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"valorPago\": 150.00,\n    \"formaPagamento\": \"PIX\",\n    \"dataPagamento\": \"2024-01-10\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/financeiro/mensalidades/{{mensalidadeId}}/pagar",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "financeiro", "mensalidades", "{{mensalidadeId}}", "pagar"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
