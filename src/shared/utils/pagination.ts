@@ -8,6 +8,11 @@ export interface PaginationParams {
   limit: number;
 }
 
+export interface PaginationInput {
+  page?: number;
+  limit?: number;
+}
+
 export const paginate = (page: number = 1, limit: number = CONSTANTS.PAGINATION_DEFAULT_LIMIT): PaginationParams => {
   // Garantir valores mínimos e máximos
   const validPage = Math.max(1, page);
@@ -24,9 +29,19 @@ export const paginate = (page: number = 1, limit: number = CONSTANTS.PAGINATION_
   };
 };
 
-export const getPaginationParams = (req: Request): PaginationParams => {
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || CONSTANTS.PAGINATION_DEFAULT_LIMIT;
+export const getPaginationParams = (input: Request | PaginationInput): PaginationParams => {
+  let page: number;
+  let limit: number;
+
+  if ('query' in input) {
+    // É um Request do Express
+    page = parseInt(input.query.page as string) || 1;
+    limit = parseInt(input.query.limit as string) || CONSTANTS.PAGINATION_DEFAULT_LIMIT;
+  } else {
+    // É um objeto com page/limit
+    page = input.page || 1;
+    limit = input.limit || CONSTANTS.PAGINATION_DEFAULT_LIMIT;
+  }
 
   return paginate(page, limit);
 };

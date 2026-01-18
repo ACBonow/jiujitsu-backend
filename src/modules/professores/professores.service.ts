@@ -1,11 +1,11 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
+import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Modalidade } from '@prisma/client';
 import { CreateProfessorInput, UpdateProfessorInput } from './professores.schemas';
 import { ProfessorResponse, ProfessorListResponse, ProfessorWithAcademias } from './professores.types';
 
-interface ProfessorFilters extends PaginationParams {
+interface ProfessorFilters extends PaginationInput {
   ativo?: boolean;
   modalidade?: Modalidade;
   academiaId?: string;

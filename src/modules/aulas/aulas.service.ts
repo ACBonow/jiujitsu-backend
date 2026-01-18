@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
+import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { DiaSemana, CategoriaTurma, Modalidade, StatusAula } from '@prisma/client';
 import {
   addDays,
@@ -36,7 +36,7 @@ const diaSemanaMap: Record<DiaSemana, number> = {
   SABADO: 6,
 };
 
-interface TemplateFilters extends PaginationParams {
+interface TemplateFilters extends PaginationInput {
   academiaId?: string;
   professorId?: string;
   diaSemana?: DiaSemana;
@@ -44,7 +44,7 @@ interface TemplateFilters extends PaginationParams {
   ativo?: boolean;
 }
 
-interface AulaFilters extends PaginationParams {
+interface AulaFilters extends PaginationInput {
   academiaId?: string;
   professorId?: string;
   categoria?: CategoriaTurma;

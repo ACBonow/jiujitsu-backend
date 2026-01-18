@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
+import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Modalidade, StatusMatricula, StatusMensalidade } from '@prisma/client';
 import { setDate, addMonths, startOfMonth, endOfMonth, format } from 'date-fns';
 import {
@@ -21,7 +21,7 @@ import {
 
 // ==================== PLANO SERVICE ====================
 
-interface PlanoFilters extends PaginationParams {
+interface PlanoFilters extends PaginationInput {
   ativo?: boolean;
   modalidade?: Modalidade;
 }
@@ -88,7 +88,7 @@ export class PlanosService {
 
 // ==================== MATRICULA SERVICE ====================
 
-interface MatriculaFilters extends PaginationParams {
+interface MatriculaFilters extends PaginationInput {
   alunoId?: string;
   academiaId?: string;
   status?: StatusMatricula;
@@ -254,7 +254,7 @@ export class MatriculasService {
 
 // ==================== MENSALIDADE SERVICE ====================
 
-interface MensalidadeFilters extends PaginationParams {
+interface MensalidadeFilters extends PaginationInput {
   matriculaId?: string;
   alunoId?: string;
   academiaId?: string;

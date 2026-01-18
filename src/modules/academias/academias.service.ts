@@ -1,12 +1,12 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
+import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { CreateAcademiaInput, UpdateAcademiaInput } from './academias.schemas';
 import { AcademiaResponse, AcademiaWithStats } from './academias.types';
 
 export class AcademiasService {
   async findAll(
-    params: PaginationParams & { ativo?: boolean }
+    params: PaginationInput & { ativo?: boolean }
   ): Promise<{ data: AcademiaWithStats[]; total: number }> {
     const { skip, take, page, limit } = getPaginationParams(params);
 

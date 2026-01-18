@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
+import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Faixa } from '@prisma/client';
 import { startOfDay, endOfDay } from 'date-fns';
 import { CreateGraduacaoInput } from './graduacoes.schemas';
@@ -22,7 +22,7 @@ const ordemFaixas: Faixa[] = [
   'VERMELHA',
 ];
 
-interface GraduacaoFilters extends PaginationParams {
+interface GraduacaoFilters extends PaginationInput {
   alunoId?: string;
   faixa?: Faixa;
   dataInicio?: Date;

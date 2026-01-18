@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
-import { PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
+import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { StatusReserva } from '@prisma/client';
 import { addMinutes, startOfDay, endOfDay } from 'date-fns';
 import { CreateReservaInput } from './reservas.schemas';
@@ -8,7 +8,7 @@ import { ReservaResponse, ReservaListResponse } from './reservas.types';
 
 const TEMPO_EXPIRACAO_MINUTOS = 15;
 
-interface ReservaFilters extends PaginationParams {
+interface ReservaFilters extends PaginationInput {
   aulaId?: string;
   alunoId?: string;
   status?: StatusReserva;
