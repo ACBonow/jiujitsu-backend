@@ -17,9 +17,80 @@ interface ReservaFilters extends PaginationParams {
 }
 
 export class ReservasService {
+  /**
+   * Lazy check: verifica e expira reservas vencidas de uma aula específica.
+   * Chamado automaticamente antes de operações de leitura/escrita.
+   */
+  private async verificarReservasExpiradas(aulaId: string): Promise<void> {
+    const agora = new Date();
+
+    // Buscar reservas expiradas desta aula
+    const reservasExpiradas = await prisma.reserva.findMany({
+      where: {
+        aulaId,
+        status: 'CONFIRMADA',
+        dataExpiracao: { lt: agora, not: null },
+      },
+    });
+
+    if (reservasExpiradas.length === 0) return;
+
+    // Expirar e promover próximos da fila em transação
+    await prisma.$transaction(async (tx) => {
+      // Marcar como expiradas
+      await tx.reserva.updateMany({
+        where: {
+          id: { in: reservasExpiradas.map((r) => r.id) },
+        },
+        data: { status: 'EXPIRADA' },
+      });
+
+      // Promover próximos da fila (um para cada vaga liberada)
+      for (let i = 0; i < reservasExpiradas.length; i++) {
+        const proximoDaFila = await tx.reserva.findFirst({
+          where: {
+            aulaId,
+            status: 'ESPERA',
+          },
+          orderBy: { posicaoFila: 'asc' },
+        });
+
+        if (proximoDaFila) {
+          await tx.reserva.update({
+            where: { id: proximoDaFila.id },
+            data: {
+              status: 'CONFIRMADA',
+              posicaoFila: null,
+              dataConfirmacao: new Date(),
+              dataExpiracao: addMinutes(new Date(), TEMPO_EXPIRACAO_MINUTOS),
+            },
+          });
+        }
+      }
+
+      // Reorganizar posições na fila
+      const reservasEmEspera = await tx.reserva.findMany({
+        where: { aulaId, status: 'ESPERA' },
+        orderBy: { posicaoFila: 'asc' },
+      });
+
+      for (let i = 0; i < reservasEmEspera.length; i++) {
+        await tx.reserva.update({
+          where: { id: reservasEmEspera[i].id },
+          data: { posicaoFila: i + 1 },
+        });
+      }
+    });
+  }
+
   async findAll(
     params: ReservaFilters
   ): Promise<{ data: ReservaResponse[]; total: number }> {
+    // Verificação lazy: se filtrar por aulaId, verifica expiradas primeiro
+    if (params.aulaId) {
+      await this.verificarReservasExpiradas(params.aulaId);
+    }
+
     const { skip, take } = getPaginationParams(params);
 
     const where: any = {};
@@ -72,6 +143,9 @@ export class ReservasService {
     const aula = await prisma.aula.findUnique({ where: { id: aulaId } });
     if (!aula) throw ApiError.notFound('Aula não encontrada');
 
+    // Verificação lazy: expira reservas vencidas antes de listar
+    await this.verificarReservasExpiradas(aulaId);
+
     const reservas = await prisma.reserva.findMany({
       where: { aulaId },
       orderBy: [{ status: 'asc' }, { posicaoFila: 'asc' }],
@@ -120,7 +194,34 @@ export class ReservasService {
       throw ApiError.notFound('Reserva não encontrada');
     }
 
-    return reserva as unknown as ReservaResponse;
+    // Verificação lazy: expira reservas vencidas da mesma aula
+    await this.verificarReservasExpiradas(reserva.aulaId);
+
+    // Buscar novamente caso a reserva tenha sido atualizada
+    const reservaAtualizada = await prisma.reserva.findUnique({
+      where: { id },
+      include: {
+        aula: {
+          select: {
+            id: true,
+            dataHora: true,
+            categoria: true,
+            modalidade: true,
+            limiteAlunos: true,
+            academia: { select: { id: true, nome: true } },
+            professor: { select: { pessoa: { select: { nome: true } } } },
+          },
+        },
+        aluno: {
+          select: {
+            id: true,
+            pessoa: { select: { nome: true } },
+          },
+        },
+      },
+    });
+
+    return reservaAtualizada as unknown as ReservaResponse;
   }
 
   async create(data: CreateReservaInput): Promise<ReservaResponse> {
@@ -167,6 +268,9 @@ export class ReservasService {
     if (existingReserva) {
       throw ApiError.conflict('Já existe uma reserva para este aluno nesta aula');
     }
+
+    // Verificação lazy: expira reservas vencidas antes de contar vagas
+    await this.verificarReservasExpiradas(data.aulaId);
 
     // Contar reservas confirmadas
     const reservasConfirmadas = await prisma.reserva.count({
@@ -358,21 +462,6 @@ export class ReservasService {
     }
 
     await prisma.reserva.delete({ where: { id } });
-  }
-
-  // Atualizar status de reservas expiradas
-  async atualizarReservasExpiradas(): Promise<number> {
-    const agora = new Date();
-
-    const result = await prisma.reserva.updateMany({
-      where: {
-        status: 'CONFIRMADA',
-        dataExpiracao: { lt: agora },
-      },
-      data: { status: 'EXPIRADA' },
-    });
-
-    return result.count;
   }
 }
 
