@@ -309,7 +309,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Academia Teste\",\n    \"endereco\": \"Rua Teste, 123\",\n    \"telefone\": \"11999999999\",\n    \"email\": \"teste@academia.com\"\n}"
+              "raw": "{\n    \"nome\": \"Academia Teste\",\n    \"cnpj\": \"12345678901234\",\n    \"telefone\": \"11999999999\",\n    \"email\": \"teste@academia.com\",\n    \"logradouro\": \"Rua Teste\",\n    \"numero\": \"123\",\n    \"bairro\": \"Centro\",\n    \"cidade\": \"São Paulo\",\n    \"estado\": \"SP\",\n    \"cep\": \"01234567\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/academias",
@@ -330,7 +330,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Academia Teste Atualizada\",\n    \"endereco\": \"Rua Teste, 456\"\n}"
+              "raw": "{\n    \"nome\": \"Academia Teste Atualizada\",\n    \"logradouro\": \"Rua Teste\",\n    \"numero\": \"456\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/academias/{{academiaId}}",
@@ -428,7 +428,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Aluno Teste\",\n    \"email\": \"aluno.teste@email.com\",\n    \"cpf\": \"12345678901\",\n    \"dataNascimento\": \"2000-01-15\",\n    \"telefone\": \"11988887777\",\n    \"endereco\": \"Rua do Aluno, 100\",\n    \"faixa\": \"BRANCA\",\n    \"graus\": 0,\n    \"academiaId\": \"{{academiaId}}\"\n}"
+              "raw": "{\n    \"nome\": \"Aluno Teste\",\n    \"email\": \"aluno.teste@email.com\",\n    \"cpf\": \"12345678901\",\n    \"dataNascimento\": \"2000-01-15\",\n    \"telefone\": \"11988887777\",\n    \"logradouro\": \"Rua do Aluno\",\n    \"numero\": \"100\",\n    \"bairro\": \"Centro\",\n    \"cidade\": \"São Paulo\",\n    \"estado\": \"SP\",\n    \"cep\": \"01234567\",\n    \"faixa\": \"BRANCA\",\n    \"graus\": 0,\n    \"sexo\": \"MASCULINO\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/alunos",
@@ -584,7 +584,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Professor Teste\",\n    \"email\": \"professor.teste@email.com\",\n    \"cpf\": \"98765432101\",\n    \"telefone\": \"11966665555\",\n    \"especialidade\": \"Jiu-Jitsu\",\n    \"modalidades\": [\"JIUJITSU\"],\n    \"cref\": \"123456-G/SP\",\n    \"academiaIds\": [\"{{academiaId}}\"]\n}"
+              "raw": "{\n    \"nome\": \"Professor Teste\",\n    \"email\": \"professor.teste@email.com\",\n    \"cpf\": \"98765432101\",\n    \"telefone\": \"11966665555\",\n    \"modalidades\": [\"JIUJITSU\"],\n    \"sexo\": \"MASCULINO\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/professores",
@@ -737,7 +737,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"academiaId\": \"{{academiaId}}\",\n    \"professorId\": \"{{professorId}}\",\n    \"diaSemana\": \"SEGUNDA\",\n    \"horario\": \"19:00\",\n    \"duracao\": 60,\n    \"categoria\": \"ADULTO\",\n    \"modalidade\": \"JIUJITSU\",\n    \"limiteAlunos\": 20,\n    \"nome\": \"Aula Noturna\"\n}"
+              "raw": "{\n    \"academiaId\": \"{{academiaId}}\",\n    \"professorId\": \"{{professorId}}\",\n    \"diaSemana\": \"SEGUNDA\",\n    \"horarioInicio\": \"19:00\",\n    \"duracao\": 60,\n    \"categoria\": \"ADULTO\",\n    \"modalidade\": \"JIUJITSU\",\n    \"limiteAlunos\": 20\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/aulas/templates",
@@ -1266,7 +1266,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"alunoId\": \"{{alunoId}}\",\n    \"novaFaixa\": \"AZUL\",\n    \"graus\": 0,\n    \"observacoes\": \"Promoção por mérito\"\n}"
+              "raw": "{\n    \"alunoId\": \"{{alunoId}}\",\n    \"faixaNova\": \"AZUL\",\n    \"grausNovos\": 0,\n    \"observacao\": \"Promoção por mérito\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/graduacoes",
@@ -1350,7 +1350,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Plano Mensal\",\n    \"descricao\": \"Plano mensal com acesso ilimitado\",\n    \"valor\": 150.00,\n    \"duracao\": 1,\n    \"modalidades\": [\"JIUJITSU\"],\n    \"academiaId\": \"{{academiaId}}\"\n}"
+              "raw": "{\n    \"nome\": \"Plano Mensal\",\n    \"descricao\": \"Plano mensal com acesso ilimitado\",\n    \"valorBase\": 150.00,\n    \"modalidades\": [\"JIUJITSU\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/financeiro/planos",
@@ -1371,7 +1371,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"nome\": \"Plano Mensal Premium\",\n    \"valor\": 180.00\n}"
+              "raw": "{\n    \"nome\": \"Plano Mensal Premium\",\n    \"valorBase\": 180.00\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/financeiro/planos/{{planoId}}",
