@@ -1,4 +1,4 @@
-import 'module-alias/register';
+import 'tsconfig-paths/register';
 import app from '../src/app';
 
 // Vercel serverless handler
