@@ -300,6 +300,10 @@ model Aluno {
   pessoaId   String   @unique
   pessoa     Pessoa   @relation(fields: [pessoaId], references: [id], onDelete: Cascade)
   
+  // Professor responsável pelo aluno
+  professorResponsavelId String?
+  professorResponsavel   Professor? @relation("AlunosResponsaveis", fields: [professorResponsavelId], references: [id])
+
   // Um professor pode ser aluno também
   professor  Professor?
   
@@ -312,6 +316,7 @@ model Aluno {
   @@index([status])
   @@index([faixa])
   @@index([dataMatricula])
+  @@index([professorResponsavelId])
   @@map("alunos")
 }
 
@@ -334,6 +339,9 @@ model Professor {
   alunoId String? @unique
   aluno   Aluno?  @relation(fields: [alunoId], references: [id])
   
+  // Alunos sob responsabilidade deste professor
+  alunosResponsaveis Aluno[] @relation("AlunosResponsaveis")
+
   // Vínculo com academias (N:N)
   academias ProfessorAcademia[]
   

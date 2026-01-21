@@ -81,10 +81,46 @@ export const cadastroPublicoSchema = z.object({
 
 // Schema para aprovar cadastro
 export const aprovarCadastroSchema = z.object({
-  papel: z.enum(['ALUNO', 'PROFESSOR'], {
-    errorMap: () => ({ message: 'Papel deve ser ALUNO ou PROFESSOR' }),
+  papel: z.enum(['ALUNO', 'PROFESSOR', 'ADMIN', 'RECEPCIONISTA'], {
+    errorMap: () => ({ message: 'Papel deve ser ALUNO, PROFESSOR, ADMIN ou RECEPCIONISTA' }),
   }),
   academiaId: z.string().cuid('ID de academia inválido').optional(),
+
+  // Campos opcionais para graduação (quando for PROFESSOR ou ALUNO)
+  faixa: z.enum([
+    'BRANCA', 'CINZA', 'AMARELA', 'LARANJA', 'VERDE',
+    'AZUL', 'ROXA', 'MARROM', 'PRETA',
+    'CORAL_PRETA_VERMELHA', 'CORAL_BRANCA_VERMELHA', 'VERMELHA'
+  ]).optional(),
+  graus: z.number().min(0).max(6).optional(),
+
+  // Professor responsável pelo aluno
+  professorResponsavelId: z.string().cuid('ID de professor inválido').optional(),
+
+  // Campos editáveis na aprovação (sobrescrevem os dados do pré-cadastro)
+  dadosEditados: z.object({
+    nome: z.string().min(3).max(100).optional(),
+    email: z.string().email().optional(),
+    cpf: z.string()
+      .transform((val) => val.replace(/\D/g, ''))
+      .refine((val) => val.length === 11, 'CPF deve conter 11 dígitos')
+      .optional(),
+    telefone: z.string()
+      .transform((val) => val.replace(/\D/g, ''))
+      .optional(),
+    dataNascimento: z.string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD')
+      .transform((val) => new Date(val + 'T00:00:00.000Z'))
+      .optional(),
+    sexo: z.enum(['MASCULINO', 'FEMININO']).optional(),
+    modalidades: z.array(
+      z.enum(['JIUJITSU', 'MUAY_THAI', 'JUDO', 'MMA', 'WRESTLING', 'BOXE', 'KICKBOXING', 'NO_GI'])
+    ).min(1).optional(),
+    observacoes: z.string().max(500).optional(),
+    // Dados do aluno
+    nomeResponsavel: z.string().max(100).optional(),
+    telefoneResponsavel: z.string().optional(),
+  }).optional(),
 });
 
 // Schema para rejeitar cadastro

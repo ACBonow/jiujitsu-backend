@@ -1,6 +1,7 @@
 import { prisma } from '../../config/database';
 import { CadastroPublicoInput, AprovarCadastroInput } from './cadastro-publico.schemas';
 import { Prisma } from '@prisma/client';
+import { hashPassword } from '../../shared/utils/password-hash';
 
 export class CadastroPublicoService {
   /**
@@ -103,7 +104,16 @@ export class CadastroPublicoService {
   }
 
   /**
-   * Aprovar cadastro e criar Pessoa + Aluno ou Professor
+   * Aprovar cadastro e criar Pessoa + Aluno/Professor/Usuário conforme o papel
+   *
+   * Lógica:
+   * - ALUNO: cria Pessoa + Aluno (sem acesso ao sistema)
+   * - PROFESSOR: cria Pessoa + Aluno (para graduação) + Professor + Usuário (senha = CPF)
+   * - ADMIN: cria Pessoa + Usuário como ADMIN (senha = CPF)
+   * - RECEPCIONISTA: cria Pessoa + Usuário como RECEPCIONISTA (senha = CPF)
+   *
+   * Permite editar dados do cadastro na aprovação via `dadosEditados`
+   * Permite vincular professor responsável ao aluno via `professorResponsavelId`
    */
   async aprovar(id: string, data: AprovarCadastroInput, aprovadoPorId: string) {
     const cadastro = await prisma.cadastroPendente.findUnique({
@@ -118,39 +128,136 @@ export class CadastroPublicoService {
       throw new Error('Este cadastro já foi processado');
     }
 
+    // Mesclar dados do cadastro com dados editados (se houver)
+    const dadosFinais = {
+      nome: data.dadosEditados?.nome || cadastro.nome,
+      email: data.dadosEditados?.email || cadastro.email,
+      cpf: data.dadosEditados?.cpf || cadastro.cpf,
+      telefone: data.dadosEditados?.telefone || cadastro.telefone,
+      dataNascimento: data.dadosEditados?.dataNascimento || cadastro.dataNascimento,
+      sexo: data.dadosEditados?.sexo || cadastro.sexo,
+      modalidades: data.dadosEditados?.modalidades || cadastro.modalidades,
+      observacoes: data.dadosEditados?.observacoes ?? cadastro.observacoes,
+      nomeResponsavel: data.dadosEditados?.nomeResponsavel,
+      telefoneResponsavel: data.dadosEditados?.telefoneResponsavel,
+    };
+
+    // Verificar se email/cpf editados já existem
+    if (data.dadosEditados?.email && data.dadosEditados.email !== cadastro.email) {
+      const emailExiste = await prisma.pessoa.findUnique({ where: { email: data.dadosEditados.email } });
+      if (emailExiste) {
+        throw new Error('O email informado já está cadastrado no sistema');
+      }
+    }
+
+    if (data.dadosEditados?.cpf && data.dadosEditados.cpf !== cadastro.cpf) {
+      const cpfExiste = await prisma.pessoa.findUnique({ where: { cpf: data.dadosEditados.cpf } });
+      if (cpfExiste) {
+        throw new Error('O CPF informado já está cadastrado no sistema');
+      }
+    }
+
+    // Validar professor responsável se informado
+    if (data.professorResponsavelId) {
+      const professorExiste = await prisma.professor.findUnique({
+        where: { id: data.professorResponsavelId },
+      });
+      if (!professorExiste) {
+        throw new Error('Professor responsável não encontrado');
+      }
+    }
+
+    // Definir faixa e graus (padrão: BRANCA, 0 graus)
+    const faixa = data.faixa || 'BRANCA';
+    const graus = data.graus ?? 0;
+
     // Usar transação para garantir consistência
     return prisma.$transaction(async (tx) => {
-      // 1. Criar Pessoa
+      // 1. Criar Pessoa com dados finais (originais + editados)
       const pessoa = await tx.pessoa.create({
         data: {
-          nome: cadastro.nome,
-          email: cadastro.email,
-          cpf: cadastro.cpf,
-          telefone: cadastro.telefone,
-          dataNascimento: cadastro.dataNascimento,
-          sexo: cadastro.sexo,
+          nome: dadosFinais.nome,
+          email: dadosFinais.email,
+          cpf: dadosFinais.cpf,
+          telefone: dadosFinais.telefone,
+          dataNascimento: dadosFinais.dataNascimento,
+          sexo: dadosFinais.sexo,
         },
       });
 
-      // 2. Criar Aluno ou Professor baseado no papel
-      if (data.papel === 'ALUNO') {
-        await tx.aluno.create({
-          data: {
-            pessoaId: pessoa.id,
-            faixa: 'BRANCA',
-            graus: 0,
-            status: 'ATIVO',
-            observacoes: cadastro.observacoes,
-          },
-        });
-      } else {
-        await tx.professor.create({
-          data: {
-            pessoaId: pessoa.id,
-            modalidades: cadastro.modalidades,
-            ativo: true,
-          },
-        });
+      let aluno = null;
+      let professor = null;
+      let usuario = null;
+
+      // 2. Criar registros baseado no papel
+      switch (data.papel) {
+        case 'ALUNO':
+          // Apenas Aluno, sem acesso ao sistema
+          aluno = await tx.aluno.create({
+            data: {
+              pessoaId: pessoa.id,
+              faixa,
+              graus,
+              status: 'ATIVO',
+              observacoes: dadosFinais.observacoes,
+              nomeResponsavel: dadosFinais.nomeResponsavel,
+              telefoneResponsavel: dadosFinais.telefoneResponsavel,
+              professorResponsavelId: data.professorResponsavelId,
+            },
+          });
+          break;
+
+        case 'PROFESSOR':
+          // Professor precisa ser Aluno também (para ter faixa/graduação)
+          aluno = await tx.aluno.create({
+            data: {
+              pessoaId: pessoa.id,
+              faixa,
+              graus,
+              status: 'ATIVO',
+              observacoes: dadosFinais.observacoes,
+            },
+          });
+
+          // Criar Professor vinculado ao Aluno
+          professor = await tx.professor.create({
+            data: {
+              pessoaId: pessoa.id,
+              alunoId: aluno.id,
+              modalidades: dadosFinais.modalidades,
+              ativo: true,
+            },
+          });
+
+          // Criar Usuário com perfil PROFESSOR e senha = CPF
+          const senhaProfessor = await hashPassword(dadosFinais.cpf);
+          usuario = await tx.usuario.create({
+            data: {
+              email: dadosFinais.email,
+              senha: senhaProfessor,
+              perfil: 'PROFESSOR',
+              pessoaId: pessoa.id,
+              academiaId: data.academiaId,
+              ativo: true,
+            },
+          });
+          break;
+
+        case 'ADMIN':
+        case 'RECEPCIONISTA':
+          // Criar Usuário com perfil correspondente e senha = CPF
+          const senhaUsuario = await hashPassword(dadosFinais.cpf);
+          usuario = await tx.usuario.create({
+            data: {
+              email: dadosFinais.email,
+              senha: senhaUsuario,
+              perfil: data.papel,
+              pessoaId: pessoa.id,
+              academiaId: data.academiaId,
+              ativo: true,
+            },
+          });
+          break;
       }
 
       // 3. Atualizar status do cadastro pendente
@@ -166,7 +273,11 @@ export class CadastroPublicoService {
       return {
         cadastro: cadastroAtualizado,
         pessoa,
+        aluno,
+        professor,
+        usuario: usuario ? { id: usuario.id, email: usuario.email, perfil: usuario.perfil } : null,
         papel: data.papel,
+        senhaInicial: usuario ? 'CPF (sem pontuação)' : null,
       };
     });
   }
