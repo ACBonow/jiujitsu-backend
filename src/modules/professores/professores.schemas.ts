@@ -11,7 +11,18 @@ export const createProfessorSchema = z.object({
     .regex(/^\d{11}$/, 'CPF deve conter 11 dígitos numéricos')
     .optional()
     .nullable(),
-  dataNascimento: z.coerce.date().optional().nullable(),
+  dataNascimento: z.preprocess(
+    (val) => {
+      if (!val) return null;
+      if (val instanceof Date) return val;
+      if (typeof val === 'string') {
+        const date = new Date(val);
+        return isNaN(date.getTime()) ? null : date;
+      }
+      return null;
+    },
+    z.date().optional().nullable()
+  ),
   sexo: z.nativeEnum(Sexo).optional().nullable(),
   // Dados do professor
   modalidades: z.array(z.nativeEnum(Modalidade)).min(1, 'Selecione pelo menos uma modalidade'),

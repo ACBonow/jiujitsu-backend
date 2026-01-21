@@ -11,7 +11,19 @@ export const createAlunoSchema = z.object({
     .regex(/^\d{11}$/, 'CPF deve conter 11 dígitos numéricos')
     .optional()
     .nullable(),
-  dataNascimento: z.coerce.date().optional().nullable(),
+  dataNascimento: z.preprocess(
+    (val) => {
+      if (!val) return null;
+      if (val instanceof Date) return val;
+      if (typeof val === 'string') {
+        // Ensure ISO-8601 DateTime format for Prisma
+        const date = new Date(val);
+        return isNaN(date.getTime()) ? null : date;
+      }
+      return null;
+    },
+    z.date().optional().nullable()
+  ),
   sexo: z.nativeEnum(Sexo).optional().nullable(),
   logradouro: z.string().optional().nullable(),
   numero: z.string().optional().nullable(),
