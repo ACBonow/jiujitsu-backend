@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { cadastroPublicoController } from './cadastro-publico.controller';
 import { validate } from '../../shared/middlewares/validation.middleware';
-import { authenticate } from '../../shared/middlewares/auth.middleware';
+import { authenticate, authorize } from '../../shared/middlewares/auth.middleware';
 import {
   cadastroPublicoSchema,
   aprovarCadastroSchema,
@@ -9,6 +9,9 @@ import {
 } from './cadastro-publico.schemas';
 
 const router = Router();
+
+// Perfis que podem gerenciar cadastros
+const PERFIS_GESTAO_CADASTROS = ['ADMIN', 'PROFESSOR', 'RECEPCIONISTA'] as const;
 
 // ============================================================================
 // ROTAS PÚBLICAS (sem autenticação)
@@ -35,6 +38,7 @@ router.get(
 
 // ============================================================================
 // ROTAS ADMINISTRATIVAS (com autenticação)
+// Acesso: ADMIN, PROFESSOR, RECEPCIONISTA
 // ============================================================================
 
 /**
@@ -44,6 +48,7 @@ router.get(
 router.get(
   '/admin/cadastros-pendentes',
   authenticate,
+  authorize('ADMIN', 'PROFESSOR', 'RECEPCIONISTA'),
   cadastroPublicoController.listarPendentes.bind(cadastroPublicoController)
 );
 
@@ -54,6 +59,7 @@ router.get(
 router.get(
   '/admin/cadastros',
   authenticate,
+  authorize('ADMIN', 'PROFESSOR', 'RECEPCIONISTA'),
   cadastroPublicoController.listarTodos.bind(cadastroPublicoController)
 );
 
@@ -64,6 +70,7 @@ router.get(
 router.get(
   '/admin/cadastros/:id',
   authenticate,
+  authorize('ADMIN', 'PROFESSOR', 'RECEPCIONISTA'),
   cadastroPublicoController.buscarPorId.bind(cadastroPublicoController)
 );
 
@@ -74,6 +81,7 @@ router.get(
 router.post(
   '/admin/cadastros/:id/aprovar',
   authenticate,
+  authorize('ADMIN', 'PROFESSOR', 'RECEPCIONISTA'),
   validate(aprovarCadastroSchema),
   cadastroPublicoController.aprovar.bind(cadastroPublicoController)
 );
@@ -85,6 +93,7 @@ router.post(
 router.post(
   '/admin/cadastros/:id/rejeitar',
   authenticate,
+  authorize('ADMIN', 'PROFESSOR', 'RECEPCIONISTA'),
   validate(rejeitarCadastroSchema),
   cadastroPublicoController.rejeitar.bind(cadastroPublicoController)
 );
