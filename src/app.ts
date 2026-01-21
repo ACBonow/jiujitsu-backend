@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { config } from './config/env';
 import { errorHandler } from './shared/middlewares/error-handler.middleware';
 import { apiLimiter } from './shared/middlewares/rate-limit.middleware';
 import authRoutes from './modules/auth/auth.routes';
@@ -17,7 +18,14 @@ const app = express();
 
 // Middlewares globais
 app.use(helmet());
-app.use(cors());
+app.use(
+  cors({
+    origin: config.cors.origin,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

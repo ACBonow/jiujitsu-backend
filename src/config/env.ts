@@ -14,6 +14,7 @@ const envSchema = z.object({
   PORT: z.string().default('3000'),
   CONFIRMACAO_RESERVA_MINUTOS: z.string().default('15'),
   LIMITE_FALTAS_RESERVA: z.string().default('3'),
+  CORS_ORIGIN: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -46,5 +47,10 @@ export const config = {
   reservas: {
     confirmacaoMinutos: parseInt(env.CONFIRMACAO_RESERVA_MINUTOS),
     limiteFaltas: parseInt(env.LIMITE_FALTAS_RESERVA),
+  },
+  cors: {
+    origin: env.CORS_ORIGIN
+      ? env.CORS_ORIGIN.split(',').map((o) => o.trim())
+      : '*',
   },
 };
