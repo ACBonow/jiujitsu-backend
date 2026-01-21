@@ -5,7 +5,8 @@ import { error } from '../utils/api-response';
 export const validate = (schema: ZodSchema) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await schema.parseAsync(req.body);
+      const parsed = await schema.parseAsync(req.body);
+      req.body = parsed; // Update req.body with the parsed/transformed data
       next();
     } catch (err) {
       if (err instanceof ZodError) {
