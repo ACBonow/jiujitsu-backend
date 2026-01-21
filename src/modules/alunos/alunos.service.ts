@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
-import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
+import { PaginationInput, PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
 import { Faixa, StatusAluno } from '@prisma/client';
 import { CreateAlunoInput, UpdateAlunoInput } from './alunos.schemas';
 import { AlunoResponse, AlunoListResponse, AlunoWithMatriculas } from './alunos.types';

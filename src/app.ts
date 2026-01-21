@@ -13,6 +13,7 @@ import presencasRoutes from './modules/presencas/presencas.routes';
 import reservasRoutes from './modules/reservas/reservas.routes';
 import graduacoesRoutes from './modules/graduacoes/graduacoes.routes';
 import financeiroRoutes from './modules/financeiro/financeiro.routes';
+import cadastroPublicoRoutes from './modules/cadastro-publico/cadastro-publico.routes';
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use('/api/presencas', presencasRoutes);
 app.use('/api/reservas', reservasRoutes);
 app.use('/api/graduacoes', graduacoesRoutes);
 app.use('/api/financeiro', financeiroRoutes);
+app.use('/api', cadastroPublicoRoutes); // Rotas públicas e admin de cadastro
 
 // 404 handler
 app.use((req, res) => {

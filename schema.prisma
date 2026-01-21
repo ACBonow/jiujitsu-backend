@@ -657,3 +657,43 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+// ----------------------------------------------------------------------------
+// CADASTRO PENDENTE (Pré-cadastro público aguardando aprovação)
+// ----------------------------------------------------------------------------
+enum StatusCadastro {
+  PENDENTE
+  APROVADO
+  REJEITADO
+}
+
+model CadastroPendente {
+  id              String          @id @default(cuid())
+
+  // Dados pessoais
+  nome            String
+  email           String          @unique
+  cpf             String          @unique
+  telefone        String?
+  dataNascimento  DateTime
+  sexo            Sexo
+  modalidades     Modalidade[]
+  observacoes     String?
+
+  // Controle de status
+  status          StatusCadastro  @default(PENDENTE)
+  motivoRejeicao  String?
+
+  // Auditoria
+  aprovadoPorId   String?
+  aprovadoEm      DateTime?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@index([cpf])
+  @@map("cadastros_pendentes")
+}
+
