@@ -96,6 +96,7 @@ O servidor estará rodando em `http://localhost:3000`
 - `npm run prisma:migrate:deploy` - Deploy migrations (produção)
 - `npm run prisma:seed` - Popular banco com dados de teste
 - `npm run prisma:studio` - Abrir Prisma Studio
+- `npm run fix:usuarios-sem-senha` - Verificar e corrigir usuários sem senha (gera hash com CPF)
 
 ## 🔐 Autenticação
 
@@ -169,6 +170,48 @@ Gerenciamento de unidades/academias
 - Métricas consolidadas
 - Gráficos
 - Filtros por academia e período
+
+### 10. Pré-Cadastro Público
+Sistema para pessoas interessadas se cadastrarem antes de serem aprovadas como alunos/professores.
+
+**Endpoints Públicos (sem autenticação):**
+```
+POST /api/public/cadastro              # Criar pré-cadastro
+GET  /api/public/cadastro/status?email=xxx  # Verificar status
+```
+
+**Endpoints Admin (ADMIN, PROFESSOR, RECEPCIONISTA):**
+```
+GET  /api/admin/cadastros-pendentes    # Listar pendentes
+GET  /api/admin/cadastros              # Listar todos (filtro opcional)
+GET  /api/admin/cadastros/:id          # Buscar por ID
+POST /api/admin/cadastros/:id/aprovar  # Aprovar e definir papel
+POST /api/admin/cadastros/:id/rejeitar # Rejeitar
+```
+
+**Papéis na aprovação:**
+- `ALUNO` - Cria Pessoa + Aluno (sem acesso ao sistema)
+- `PROFESSOR` - Cria Pessoa + Aluno + Professor + Usuário (senha = CPF)
+- `ADMIN` - Cria Pessoa + Usuário como ADMIN (senha = CPF)
+- `RECEPCIONISTA` - Cria Pessoa + Usuário como RECEPCIONISTA (senha = CPF)
+
+**Funcionalidades:**
+- Editar dados na aprovação (`dadosEditados`)
+- Vincular professor responsável ao aluno (`professorResponsavelId`)
+- Definir faixa e graus na aprovação
+- Senha inicial = CPF (sem pontuação)
+
+## 🔧 Scripts Utilitários
+
+### Corrigir usuários sem senha
+
+Verifica e corrige usuários (PROFESSOR, ADMIN, RECEPCIONISTA) que não têm senha configurada, gerando hash com CPF:
+
+```bash
+npm run fix:usuarios-sem-senha
+```
+
+O script também cria usuários para professores que não possuem conta de acesso.
 
 ## 🔄 Jobs Cron (Vercel)
 
