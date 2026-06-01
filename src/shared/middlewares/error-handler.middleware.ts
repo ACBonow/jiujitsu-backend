@@ -10,9 +10,9 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
 
   // ApiError customizado
   if (err instanceof ApiError) {
-    return res.status(err.statusCode).json(
-      error(err.message)
-    );
+    const body: Record<string, unknown> = { success: false, message: err.message };
+    if (err.code) body.code = err.code;
+    return res.status(err.statusCode).json(body);
   }
 
   // Prisma Known Request Error

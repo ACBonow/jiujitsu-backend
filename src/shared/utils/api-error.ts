@@ -1,11 +1,13 @@
 export class ApiError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
+  public readonly code?: string;
 
-  constructor(statusCode: number, message: string, isOperational = true) {
+  constructor(statusCode: number, message: string, isOperational = true, code?: string) {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
+    this.code = code;
 
     Object.setPrototypeOf(this, ApiError.prototype);
   }
@@ -16,6 +18,10 @@ export class ApiError extends Error {
 
   static unauthorized(message: string = 'Não autorizado'): ApiError {
     return new ApiError(401, message);
+  }
+
+  static tokenExpired(): ApiError {
+    return new ApiError(401, 'Token expirado', true, 'TOKEN_EXPIRED');
   }
 
   static forbidden(message: string = 'Acesso negado'): ApiError {

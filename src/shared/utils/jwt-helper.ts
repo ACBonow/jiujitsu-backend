@@ -25,7 +25,7 @@ export const verifyAccessToken = (token: string): JWTPayload => {
     return jwt.verify(token, config.jwt.secret) as JWTPayload;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw ApiError.unauthorized('Token expirado');
+      throw ApiError.tokenExpired();
     }
     throw ApiError.unauthorized('Token inválido');
   }
