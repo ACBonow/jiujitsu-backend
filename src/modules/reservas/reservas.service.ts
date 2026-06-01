@@ -1,16 +1,23 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
-import { StatusReserva } from '@prisma/client';
+import { Perfil, StatusReserva } from '@prisma/client';
 import { addMinutes, startOfDay, endOfDay } from 'date-fns';
 import { CreateReservaInput } from './reservas.schemas';
 import { ReservaResponse, ReservaListResponse } from './reservas.types';
+
+interface CurrentUser {
+  id: string;
+  perfil: Perfil;
+  academiaId?: string;
+}
 
 const TEMPO_EXPIRACAO_MINUTOS = 15;
 
 interface ReservaFilters extends PaginationInput {
   aulaId?: string;
   alunoId?: string;
+  academiaId?: string;
   status?: StatusReserva;
   dataInicio?: Date;
   dataFim?: Date;
@@ -98,6 +105,7 @@ export class ReservasService {
     if (params.aulaId) where.aulaId = params.aulaId;
     if (params.alunoId) where.alunoId = params.alunoId;
     if (params.status) where.status = params.status;
+    if (params.academiaId) where.aula = { academiaId: params.academiaId };
 
     if (params.dataInicio || params.dataFim) {
       where.aula = {
@@ -224,7 +232,7 @@ export class ReservasService {
     return reservaAtualizada as unknown as ReservaResponse;
   }
 
-  async create(data: CreateReservaInput): Promise<ReservaResponse> {
+  async create(data: CreateReservaInput, currentUser: CurrentUser): Promise<ReservaResponse> {
     // Verificar se aula existe
     const aula = await prisma.aula.findUnique({
       where: { id: data.aulaId },
@@ -252,8 +260,30 @@ export class ReservasService {
     }
 
     // Verificar se aluno existe
-    const aluno = await prisma.aluno.findUnique({ where: { id: data.alunoId } });
+    const aluno = await prisma.aluno.findUnique({
+      where: { id: data.alunoId },
+      include: { usuario: { select: { id: true, academiaId: true } } },
+    });
     if (!aluno) throw ApiError.notFound('Aluno não encontrado');
+
+    // Aluno só pode criar reserva para si mesmo; gestores só dentro de sua academia
+    if (currentUser.perfil === 'ALUNO') {
+      if (aluno.usuario?.id !== currentUser.id) {
+        throw ApiError.forbidden('Você só pode criar reservas para si mesmo');
+      }
+    } else if (currentUser.academiaId) {
+      if (aula.academiaId !== currentUser.academiaId) {
+        throw ApiError.forbidden('Você não tem acesso a esta academia');
+      }
+    }
+
+    // Verificar se aluno tem matrícula ativa na academia da aula
+    const matriculaAtiva = await prisma.matricula.findFirst({
+      where: { alunoId: data.alunoId, academiaId: aula.academiaId, status: 'ATIVA' },
+    });
+    if (!matriculaAtiva) {
+      throw ApiError.unprocessable('Aluno não possui matrícula ativa nesta academia');
+    }
 
     // Verificar se já existe reserva para este aluno nesta aula
     const existingReserva = await prisma.reserva.findUnique({
@@ -327,14 +357,27 @@ export class ReservasService {
     return reserva as unknown as ReservaResponse;
   }
 
-  async cancelar(id: string): Promise<ReservaResponse> {
+  async cancelar(id: string, currentUser: CurrentUser): Promise<ReservaResponse> {
     const reserva = await prisma.reserva.findUnique({
       where: { id },
-      include: { aula: true },
+      include: {
+        aula: true,
+        aluno: { include: { usuario: { select: { id: true } } } },
+      },
     });
 
     if (!reserva) {
       throw ApiError.notFound('Reserva não encontrada');
+    }
+
+    // Verificar propriedade: aluno só cancela a própria reserva; gestores cancelam na sua academia
+    const ehDono = reserva.aluno.usuario?.id === currentUser.id;
+    const ehGestor = ['ADMIN', 'PROFESSOR', 'RECEPCIONISTA'].includes(currentUser.perfil);
+    if (!ehDono && !ehGestor) {
+      throw ApiError.forbidden('Você não pode cancelar esta reserva');
+    }
+    if (ehGestor && currentUser.academiaId && reserva.aula.academiaId !== currentUser.academiaId) {
+      throw ApiError.forbidden('Você não tem acesso a esta academia');
     }
 
     if (reserva.status === 'CANCELADA') {

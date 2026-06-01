@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { aulasService } from './aulas.service';
 import { success, paginated } from '../../shared/utils/api-response';
+import { resolveAcademiaScope } from '../../shared/utils/academia-scope';
 import {
   CreateTemplateAulaInput,
   UpdateTemplateAulaInput,
@@ -86,6 +87,7 @@ export class AulasController {
 
       const result = await aulasService.findAllAulas({
         ...params,
+        academiaId: resolveAcademiaScope(req.user!, params.academiaId),
         page: params.page ? Number(params.page) : undefined,
         limit: params.limit ? Number(params.limit) : undefined,
       });

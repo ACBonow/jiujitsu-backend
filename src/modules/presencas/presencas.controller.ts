@@ -6,6 +6,7 @@ import {
   RegistrarPresencasEmLoteInput,
   PresencaQueryInput,
 } from './presencas.schemas';
+import { resolveAcademiaScope } from '../../shared/utils/academia-scope';
 
 export class PresencasController {
   async findAll(req: Request, res: Response, next: NextFunction) {
@@ -14,6 +15,7 @@ export class PresencasController {
 
       const result = await presencasService.findAll({
         ...params,
+        academiaId: resolveAcademiaScope(req.user!, params.academiaId),
         page: params.page ? Number(params.page) : undefined,
         limit: params.limit ? Number(params.limit) : undefined,
       });

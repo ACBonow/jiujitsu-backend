@@ -111,9 +111,8 @@ export class CadastroPublicoController {
   async aprovar(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const userId = req.user?.id; // Pegar do token JWT
 
-      const resultado = await cadastroPublicoService.aprovar(id, req.body, userId);
+      const resultado = await cadastroPublicoService.aprovar(id, req.body, req.user!);
 
       return res.json(
         success(
@@ -122,7 +121,7 @@ export class CadastroPublicoController {
         )
       );
     } catch (err: any) {
-      return res.status(400).json(error(err.message));
+      next(err);
     }
   }
 

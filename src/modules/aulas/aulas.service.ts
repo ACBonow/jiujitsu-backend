@@ -1,7 +1,7 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
-import { DiaSemana, CategoriaTurma, Modalidade, StatusAula } from '@prisma/client';
+import { DiaSemana, CategoriaTurma, Modalidade } from '@prisma/client';
 import {
   addDays,
   startOfDay,
@@ -372,16 +372,24 @@ export class AulasService {
     const existing = await prisma.aula.findUnique({ where: { id } });
     if (!existing) throw ApiError.notFound('Aula não encontrada');
 
-    if (existing.status !== 'EM_ANDAMENTO' && existing.status !== 'AGENDADA') {
-      throw ApiError.badRequest('Apenas aulas agendadas ou em andamento podem ser concluídas');
+    if (existing.status !== 'EM_ANDAMENTO') {
+      throw ApiError.unprocessable('Apenas aulas em andamento podem ser concluídas');
     }
 
     const aula = await prisma.$transaction(async (tx) => {
-      // Marcar reservas confirmadas que não viraram presença como FALTOU
+      // Buscar alunos que já têm presença registrada (não devem ser marcados como FALTOU)
+      const presencasRegistradas = await tx.presenca.findMany({
+        where: { aulaId: id },
+        select: { alunoId: true },
+      });
+      const idsComPresenca = presencasRegistradas.map((p) => p.alunoId);
+
+      // Marcar como FALTOU apenas reservas CONFIRMADAS de quem NÃO compareceu
       await tx.reserva.updateMany({
         where: {
           aulaId: id,
           status: 'CONFIRMADA',
+          ...(idsComPresenca.length > 0 && { alunoId: { notIn: idsComPresenca } }),
         },
         data: { status: 'FALTOU' },
       });

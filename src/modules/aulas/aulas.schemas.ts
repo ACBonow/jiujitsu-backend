@@ -38,6 +38,7 @@ export const createAulaSchema = z.object({
   observacoes: z.string().optional().nullable(),
 });
 
+// status removido — use /iniciar, /concluir ou /cancelar para transições de estado
 export const updateAulaSchema = z.object({
   professorId: z.string().cuid().optional(),
   professorSubstitutoId: z.string().cuid().optional().nullable(),
@@ -47,7 +48,6 @@ export const updateAulaSchema = z.object({
   modalidade: z.nativeEnum(Modalidade).optional(),
   tipoAula: z.nativeEnum(TipoAula).optional(),
   limiteAlunos: z.number().int().positive().optional().nullable(),
-  status: z.nativeEnum(StatusAula).optional(),
   observacoes: z.string().optional().nullable(),
 });
 

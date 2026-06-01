@@ -131,14 +131,24 @@ export class PresencasService {
     const aula = await prisma.aula.findUnique({ where: { id: data.aulaId } });
     if (!aula) throw ApiError.notFound('Aula não encontrada');
 
-    // Verificar se a aula não está cancelada
-    if (aula.status === 'CANCELADA') {
-      throw ApiError.badRequest('Não é possível registrar presença em aula cancelada');
+    // Presença só pode ser registrada em aulas em andamento ou concluídas
+    if (aula.status !== 'EM_ANDAMENTO' && aula.status !== 'CONCLUIDA') {
+      throw ApiError.unprocessable(
+        'Presença só pode ser registrada em aulas em andamento ou concluídas'
+      );
     }
 
     // Verificar se aluno existe
     const aluno = await prisma.aluno.findUnique({ where: { id: data.alunoId } });
     if (!aluno) throw ApiError.notFound('Aluno não encontrado');
+
+    // Verificar se aluno tem matrícula ativa na academia da aula
+    const matriculaAtiva = await prisma.matricula.findFirst({
+      where: { alunoId: data.alunoId, academiaId: aula.academiaId, status: 'ATIVA' },
+    });
+    if (!matriculaAtiva) {
+      throw ApiError.unprocessable('Aluno não possui matrícula ativa nesta academia');
+    }
 
     // Verificar se já existe presença para este aluno nesta aula
     const existingPresenca = await prisma.presenca.findUnique({
@@ -220,8 +230,10 @@ export class PresencasService {
     const aula = await prisma.aula.findUnique({ where: { id: data.aulaId } });
     if (!aula) throw ApiError.notFound('Aula não encontrada');
 
-    if (aula.status === 'CANCELADA') {
-      throw ApiError.badRequest('Não é possível registrar presença em aula cancelada');
+    if (aula.status !== 'EM_ANDAMENTO' && aula.status !== 'CONCLUIDA') {
+      throw ApiError.unprocessable(
+        'Presença só pode ser registrada em aulas em andamento ou concluídas'
+      );
     }
 
     // Verificar presenças já existentes

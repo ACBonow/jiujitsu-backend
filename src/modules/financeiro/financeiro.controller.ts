@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { planosService, matriculasService, mensalidadesService } from './financeiro.service';
 import { success, paginated } from '../../shared/utils/api-response';
+import { resolveAcademiaScope } from '../../shared/utils/academia-scope';
 import {
   CreatePlanoInput,
   UpdatePlanoInput,
@@ -80,6 +81,7 @@ export class MatriculasController {
       const params = req.query as unknown as MatriculaQueryInput;
       const result = await matriculasService.findAll({
         ...params,
+        academiaId: resolveAcademiaScope(req.user!, params.academiaId),
         page: params.page ? Number(params.page) : undefined,
         limit: params.limit ? Number(params.limit) : undefined,
       });
@@ -139,6 +141,7 @@ export class MensalidadesController {
       const params = req.query as unknown as MensalidadeQueryInput;
       const result = await mensalidadesService.findAll({
         ...params,
+        academiaId: resolveAcademiaScope(req.user!, params.academiaId),
         page: params.page ? Number(params.page) : undefined,
         limit: params.limit ? Number(params.limit) : undefined,
       });

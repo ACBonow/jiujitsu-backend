@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { graduacoesService } from './graduacoes.service';
 import { success, paginated } from '../../shared/utils/api-response';
 import { CreateGraduacaoInput, GraduacaoQueryInput } from './graduacoes.schemas';
+import { resolveAcademiaScope } from '../../shared/utils/academia-scope';
 
 export class GraduacoesController {
   async findAll(req: Request, res: Response, next: NextFunction) {
@@ -10,6 +11,7 @@ export class GraduacoesController {
 
       const result = await graduacoesService.findAll({
         ...params,
+        academiaId: resolveAcademiaScope(req.user!, params.academiaId),
         page: params.page ? Number(params.page) : undefined,
         limit: params.limit ? Number(params.limit) : undefined,
       });

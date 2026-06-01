@@ -3,6 +3,7 @@ import { alunosService } from './alunos.service';
 import { success, paginated } from '../../shared/utils/api-response';
 import { CreateAlunoInput, UpdateAlunoInput, AlunoQueryInput } from './alunos.schemas';
 import { StatusAluno } from '@prisma/client';
+import { resolveAcademiaScope } from '../../shared/utils/academia-scope';
 
 export class AlunosController {
   async findAll(req: Request, res: Response, next: NextFunction) {
@@ -14,7 +15,7 @@ export class AlunosController {
         limit: limit ? Number(limit) : undefined,
         status,
         faixa,
-        academiaId,
+        academiaId: resolveAcademiaScope(req.user!, academiaId),
         search,
       });
 

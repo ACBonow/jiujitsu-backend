@@ -1,7 +1,14 @@
 import { prisma } from '../../config/database';
 import { CadastroPublicoInput, AprovarCadastroInput } from './cadastro-publico.schemas';
-import { Prisma } from '@prisma/client';
+import { Prisma, Perfil } from '@prisma/client';
 import { hashPassword } from '../../shared/utils/password-hash';
+import { ApiError } from '../../shared/utils/api-error';
+
+interface AprovadorContext {
+  id: string;
+  perfil: Perfil;
+  academiaId?: string;
+}
 
 export class CadastroPublicoService {
   /**
@@ -115,7 +122,25 @@ export class CadastroPublicoService {
    * Permite editar dados do cadastro na aprovação via `dadosEditados`
    * Permite vincular professor responsável ao aluno via `professorResponsavelId`
    */
-  async aprovar(id: string, data: AprovarCadastroInput, aprovadoPorId: string) {
+  async aprovar(id: string, data: AprovarCadastroInput, aprovador: AprovadorContext) {
+    // Verificar permissões granulares por papel solicitado
+    if (data.papel === 'ADMIN' && aprovador.perfil !== Perfil.ADMIN) {
+      throw ApiError.forbidden('Apenas ADMIN pode criar outros ADMINs');
+    }
+    if (data.papel === 'PROFESSOR' && aprovador.perfil === Perfil.RECEPCIONISTA) {
+      throw ApiError.forbidden('Recepcionista não pode criar Professores');
+    }
+    if (data.papel === 'RECEPCIONISTA' && aprovador.perfil !== Perfil.ADMIN) {
+      throw ApiError.forbidden('Apenas ADMIN pode criar Recepcionistas');
+    }
+
+    // Validar que não-admins globais só criam usuários na sua própria academia
+    const isGlobalAdmin = aprovador.perfil === Perfil.ADMIN && !aprovador.academiaId;
+    const academiaIdEfetiva = isGlobalAdmin ? data.academiaId : aprovador.academiaId;
+    if (!isGlobalAdmin && data.academiaId && data.academiaId !== aprovador.academiaId) {
+      throw ApiError.forbidden('Você não pode criar usuários em outra academia');
+    }
+
     const cadastro = await prisma.cadastroPendente.findUnique({
       where: { id },
     });
@@ -167,9 +192,9 @@ export class CadastroPublicoService {
       }
     }
 
-    // Definir faixa e graus (padrão: BRANCA, 0 graus)
-    const faixa = data.faixa || 'BRANCA';
-    const graus = data.graus ?? 0;
+    // Novos alunos sempre iniciam em BRANCA, 0 graus — faixa só muda via /graduacoes
+    const faixa = 'BRANCA' as const;
+    const graus = 0;
 
     // Usar transação para garantir consistência
     return prisma.$transaction(async (tx) => {
@@ -237,7 +262,7 @@ export class CadastroPublicoService {
               senha: senhaProfessor,
               perfil: 'PROFESSOR',
               pessoaId: pessoa.id,
-              academiaId: data.academiaId,
+              academiaId: academiaIdEfetiva,
               ativo: true,
             },
           });
@@ -253,7 +278,7 @@ export class CadastroPublicoService {
               senha: senhaUsuario,
               perfil: data.papel,
               pessoaId: pessoa.id,
-              academiaId: data.academiaId,
+              academiaId: academiaIdEfetiva,
               ativo: true,
             },
           });
@@ -265,7 +290,7 @@ export class CadastroPublicoService {
         where: { id },
         data: {
           status: 'APROVADO',
-          aprovadoPorId,
+          aprovadoPorId: aprovador.id,
           aprovadoEm: new Date(),
         },
       });

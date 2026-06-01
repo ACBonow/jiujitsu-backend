@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Faixa, StatusAluno, CategoriaIdade, CategoriaPeso, Sexo } from '@prisma/client';
+import { StatusAluno, CategoriaIdade, CategoriaPeso, Sexo } from '@prisma/client';
+import { validarCPF } from '../../shared/utils/validators';
 
 export const createAlunoSchema = z.object({
   // Dados da pessoa
@@ -8,7 +9,9 @@ export const createAlunoSchema = z.object({
   telefone: z.string().min(10, 'Telefone deve ter no mínimo 10 dígitos').optional().nullable(),
   cpf: z
     .string()
-    .regex(/^\d{11}$/, 'CPF deve conter 11 dígitos numéricos')
+    .transform((val) => val.replace(/\D/g, ''))
+    .refine((val) => val.length === 11, 'CPF deve conter 11 dígitos')
+    .refine(validarCPF, 'CPF inválido')
     .optional()
     .nullable(),
   dataNascimento: z.preprocess(
@@ -37,8 +40,8 @@ export const createAlunoSchema = z.object({
     .optional()
     .nullable(),
   // Dados do aluno
-  faixa: z.nativeEnum(Faixa).default('BRANCA'),
-  graus: z.number().int().min(0).max(6).default(0),
+  // faixa e graus são definidos pelo sistema (sempre BRANCA/0 ao criar)
+  // alterações de faixa: exclusivamente via POST /api/graduacoes
   peso: z.number().positive('Peso deve ser positivo').optional().nullable(),
   categoriaIdade: z.nativeEnum(CategoriaIdade).optional().nullable(),
   categoriaPeso: z.nativeEnum(CategoriaPeso).optional().nullable(),
@@ -47,9 +50,8 @@ export const createAlunoSchema = z.object({
   observacoes: z.string().optional().nullable(),
 });
 
-export const updateAlunoSchema = createAlunoSchema.partial().extend({
-  status: z.nativeEnum(StatusAluno).optional(),
-});
+// status removido — use PATCH /api/alunos/:id/status para alterar o status
+export const updateAlunoSchema = createAlunoSchema.partial();
 
 export const alunoIdParamSchema = z.object({
   id: z.string().cuid('ID inválido'),

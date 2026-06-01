@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { reservasService } from './reservas.service';
 import { success, paginated } from '../../shared/utils/api-response';
 import { CreateReservaInput, ReservaQueryInput } from './reservas.schemas';
+import { resolveAcademiaScope } from '../../shared/utils/academia-scope';
 
 export class ReservasController {
   async findAll(req: Request, res: Response, next: NextFunction) {
@@ -10,6 +11,7 @@ export class ReservasController {
 
       const result = await reservasService.findAll({
         ...params,
+        academiaId: resolveAcademiaScope(req.user!, undefined),
         page: params.page ? Number(params.page) : undefined,
         limit: params.limit ? Number(params.limit) : undefined,
       });
@@ -51,7 +53,7 @@ export class ReservasController {
     try {
       const data = req.body as CreateReservaInput;
 
-      const reserva = await reservasService.create(data);
+      const reserva = await reservasService.create(data, req.user!);
 
       const message =
         reserva.status === 'CONFIRMADA'
@@ -68,7 +70,7 @@ export class ReservasController {
     try {
       const { id } = req.params;
 
-      const reserva = await reservasService.cancelar(id);
+      const reserva = await reservasService.cancelar(id, req.user!);
 
       res.json(success(reserva, 'Reserva cancelada com sucesso'));
     } catch (error) {

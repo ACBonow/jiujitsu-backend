@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { cadastroPublicoController } from './cadastro-publico.controller';
 import { validate } from '../../shared/middlewares/validation.middleware';
 import { authenticate, authorize } from '../../shared/middlewares/auth.middleware';
+import { createLimiter } from '../../shared/middlewares/rate-limit.middleware';
 import {
   cadastroPublicoSchema,
   aprovarCadastroSchema,
@@ -33,6 +34,7 @@ router.post(
  */
 router.get(
   '/public/cadastro/status',
+  createLimiter,
   cadastroPublicoController.verificarStatus.bind(cadastroPublicoController)
 );
 

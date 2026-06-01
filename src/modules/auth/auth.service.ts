@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
 import { comparePassword, hashPassword } from '../../shared/utils/password-hash';
@@ -8,6 +9,10 @@ import {
   JWTPayload,
 } from '../../shared/utils/jwt-helper';
 import { LoginResponse, AuthTokens } from './auth.types';
+
+function hashRefreshToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 export class AuthService {
   async login(email: string, senha: string): Promise<LoginResponse> {
@@ -56,11 +61,11 @@ export class AuthService {
       refreshToken: generateRefreshToken(payload),
     };
 
-    // Salvar refresh token no banco
+    // Salvar hash do refresh token no banco (não o token em plaintext)
     await prisma.usuario.update({
       where: { id: usuario.id },
       data: {
-        refreshToken: tokens.refreshToken,
+        refreshToken: hashRefreshToken(tokens.refreshToken),
         lastLogin: new Date(),
       },
     });
@@ -107,7 +112,7 @@ export class AuthService {
       throw ApiError.unauthorized('Usuário inválido ou inativo');
     }
 
-    if (usuario.refreshToken !== refreshToken) {
+    if (usuario.refreshToken !== hashRefreshToken(refreshToken)) {
       throw ApiError.unauthorized('Refresh token inválido');
     }
 
@@ -123,10 +128,10 @@ export class AuthService {
       refreshToken: generateRefreshToken(payload),
     };
 
-    // Atualizar refresh token no banco
+    // Atualizar hash do refresh token no banco (rotação)
     await prisma.usuario.update({
       where: { id: usuario.id },
-      data: { refreshToken: newTokens.refreshToken },
+      data: { refreshToken: hashRefreshToken(newTokens.refreshToken) },
     });
 
     return newTokens;

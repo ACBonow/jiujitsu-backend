@@ -81,18 +81,11 @@ export const cadastroPublicoSchema = z.object({
 
 // Schema para aprovar cadastro
 export const aprovarCadastroSchema = z.object({
+  // Apenas ADMIN pode criar outros ADMINs — validado no service
   papel: z.enum(['ALUNO', 'PROFESSOR', 'ADMIN', 'RECEPCIONISTA'], {
     errorMap: () => ({ message: 'Papel deve ser ALUNO, PROFESSOR, ADMIN ou RECEPCIONISTA' }),
   }),
   academiaId: z.string().cuid('ID de academia inválido').optional(),
-
-  // Campos opcionais para graduação (quando for PROFESSOR ou ALUNO)
-  faixa: z.enum([
-    'BRANCA', 'CINZA', 'AMARELA', 'LARANJA', 'VERDE',
-    'AZUL', 'ROXA', 'MARROM', 'PRETA',
-    'CORAL_PRETA_VERMELHA', 'CORAL_BRANCA_VERMELHA', 'VERMELHA'
-  ]).optional(),
-  graus: z.number().min(0).max(6).optional(),
 
   // Professor responsável pelo aluno
   professorResponsavelId: z.string().cuid('ID de professor inválido').optional(),
@@ -125,10 +118,12 @@ export const aprovarCadastroSchema = z.object({
 
 // Schema para rejeitar cadastro
 export const rejeitarCadastroSchema = z.object({
-  motivo: z.string().max(500, 'Motivo deve ter no máximo 500 caracteres').optional(),
+  motivo: z
+    .string()
+    .min(10, 'Motivo deve ter pelo menos 10 caracteres')
+    .max(500, 'Motivo deve ter no máximo 500 caracteres'),
 });
 
-// Types inferidos dos schemas
 export type CadastroPublicoInput = z.infer<typeof cadastroPublicoSchema>;
 export type AprovarCadastroInput = z.infer<typeof aprovarCadastroSchema>;
 export type RejeitarCadastroInput = z.infer<typeof rejeitarCadastroSchema>;
