@@ -5,6 +5,7 @@ import { Perfil, StatusReserva } from '@prisma/client';
 import { addMinutes, startOfDay, endOfDay } from 'date-fns';
 import { CreateReservaInput } from './reservas.schemas';
 import { ReservaResponse, ReservaListResponse } from './reservas.types';
+import { CONSTANTS } from '../../config/constants';
 
 interface CurrentUser {
   id: string;
@@ -285,6 +286,13 @@ export class ReservasService {
       throw ApiError.unprocessable('Aluno não possui matrícula ativa nesta academia');
     }
 
+    // Verificar limite de faltas em reservas
+    if (aluno.faltasReservas >= CONSTANTS.LIMITE_FALTAS_RESERVA) {
+      throw ApiError.unprocessable(
+        `Aluno atingiu o limite de ${CONSTANTS.LIMITE_FALTAS_RESERVA} faltas em reservas e está temporariamente bloqueado`
+      );
+    }
+
     // Verificar se já existe reserva para este aluno nesta aula
     const existingReserva = await prisma.reserva.findUnique({
       where: {
@@ -325,13 +333,17 @@ export class ReservasService {
       posicaoFila = (ultimaPosicao?.posicaoFila || 0) + 1;
     }
 
+    const agora = new Date();
     const reserva = await prisma.reserva.create({
       data: {
         aulaId: data.aulaId,
         alunoId: data.alunoId,
         status,
         posicaoFila,
-        dataConfirmacao: status === 'CONFIRMADA' ? new Date() : null,
+        dataConfirmacao: status === 'CONFIRMADA' ? agora : null,
+        dataExpiracao: status === 'CONFIRMADA'
+          ? addMinutes(agora, CONSTANTS.CONFIRMACAO_MINUTOS)
+          : null,
       },
       include: {
         aula: {

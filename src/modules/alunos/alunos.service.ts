@@ -150,8 +150,8 @@ export class AlunosService {
       return tx.aluno.create({
         data: {
           pessoaId: pessoa.id,
-          faixa: data.faixa || 'BRANCA',
-          graus: data.graus || 0,
+          faixa: 'BRANCA',
+          graus: 0,
           peso: data.peso,
           categoriaIdade: data.categoriaIdade,
           categoriaPeso: data.categoriaPeso,
