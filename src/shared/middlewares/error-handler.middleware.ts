@@ -51,13 +51,11 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
     }
   }
 
-  // Prisma Validation Error
+  // Prisma Validation Error — não expor detalhes internos do schema
   if (err instanceof Prisma.PrismaClientValidationError) {
-    // Extrair a última linha da mensagem que contém o detalhe do erro
-    const errorDetail = err.message.split('\n').pop() || '';
-    console.error('Prisma Validation Error:', errorDetail);
+    console.error('Prisma Validation Error (interno):', err.message);
     return res.status(400).json(
-      error(`Erro de validação de dados: ${errorDetail}`)
+      error('Dados inválidos para a operação')
     );
   }
 

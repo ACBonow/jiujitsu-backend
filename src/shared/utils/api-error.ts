@@ -30,6 +30,10 @@ export class ApiError extends Error {
     return new ApiError(409, message);
   }
 
+  static unprocessable(message: string): ApiError {
+    return new ApiError(422, message);
+  }
+
   static internal(message: string = 'Erro interno do servidor'): ApiError {
     return new ApiError(500, message, false);
   }
