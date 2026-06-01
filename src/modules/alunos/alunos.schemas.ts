@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { StatusAluno, CategoriaIdade, CategoriaPeso, Sexo } from '@prisma/client';
+import { Faixa, StatusAluno, CategoriaIdade, CategoriaPeso, Sexo } from '@prisma/client';
 import { validarCPF } from '../../shared/utils/validators';
 
 export const createAlunoSchema = z.object({
