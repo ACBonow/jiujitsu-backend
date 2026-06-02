@@ -48,49 +48,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // 3. Gerar mensalidades do mês atual se estiver no dia 25 ou depois
+    // 3. Gerar mensalidades do mês corrente para todas as matrículas ativas (idempotente)
     let mensalidadesGeradas = 0;
-    if (hoje.getDate() >= 25) {
-      const proximoMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1);
-      const mesReferencia = format(proximoMes, 'yyyy-MM');
+    const mesReferencia = format(hoje, 'yyyy-MM');
+    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
-      const matriculasAtivas = await prisma.matricula.findMany({
-        where: { status: 'ATIVA' },
-        select: {
-          id: true,
-          valorFinal: true,
-          diaVencimento: true,
+    const matriculasAtivas = await prisma.matricula.findMany({
+      where: { status: 'ATIVA' },
+      select: {
+        id: true,
+        valorFinal: true,
+        diaVencimento: true,
+      },
+    });
+
+    for (const matricula of matriculasAtivas) {
+      const existente = await prisma.mensalidade.findUnique({
+        where: {
+          matriculaId_mesReferencia: {
+            matriculaId: matricula.id,
+            mesReferencia,
+          },
         },
       });
 
-      for (const matricula of matriculasAtivas) {
-        const existente = await prisma.mensalidade.findUnique({
-          where: {
-            matriculaId_mesReferencia: {
-              matriculaId: matricula.id,
-              mesReferencia,
-            },
+      if (!existente) {
+        const ultimoDia = endOfMonth(primeiroDiaMes).getDate();
+        const dia = matricula.diaVencimento > ultimoDia ? ultimoDia : matricula.diaVencimento;
+        const dataVencimento = setDate(primeiroDiaMes, dia);
+
+        await prisma.mensalidade.create({
+          data: {
+            matriculaId: matricula.id,
+            mesReferencia,
+            valor: matricula.valorFinal,
+            dataVencimento,
+            status: 'PENDENTE',
           },
         });
-
-        if (!existente) {
-          let dataVencimento = setDate(proximoMes, matricula.diaVencimento);
-          const ultimoDia = endOfMonth(proximoMes).getDate();
-          if (matricula.diaVencimento > ultimoDia) {
-            dataVencimento = endOfMonth(proximoMes);
-          }
-
-          await prisma.mensalidade.create({
-            data: {
-              matriculaId: matricula.id,
-              mesReferencia,
-              valor: matricula.valorFinal,
-              dataVencimento,
-              status: 'PENDENTE',
-            },
-          });
-          mensalidadesGeradas++;
-        }
+        mensalidadesGeradas++;
       }
     }
 

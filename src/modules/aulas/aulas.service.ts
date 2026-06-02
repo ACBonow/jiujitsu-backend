@@ -1,7 +1,7 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
-import { DiaSemana, CategoriaTurma, Modalidade } from '@prisma/client';
+import { DiaSemana, CategoriaTurma, Modalidade, StatusAula } from '@prisma/client';
 import {
   addDays,
   startOfDay,
@@ -17,6 +17,7 @@ import {
   CreateAulaInput,
   UpdateAulaInput,
   GerarAulasInput,
+  DefinirSubstitutoInput,
 } from './aulas.schemas';
 import {
   TemplateAulaResponse,
@@ -402,6 +403,39 @@ export class AulasService {
           professor: { select: { id: true, pessoa: { select: { nome: true } } } },
         },
       });
+    });
+
+    return aula as unknown as AulaResponse;
+  }
+
+  async definirSubstituto(id: string, data: DefinirSubstitutoInput): Promise<AulaResponse> {
+    const existing = await prisma.aula.findUnique({ where: { id } });
+    if (!existing) throw ApiError.notFound('Aula não encontrada');
+
+    if (existing.status === 'CONCLUIDA' || existing.status === 'CANCELADA') {
+      throw ApiError.badRequest('Não é possível alterar professor de aula concluída ou cancelada');
+    }
+
+    if (data.professorSubstitutoId) {
+      if (data.professorSubstitutoId === existing.professorId) {
+        throw ApiError.badRequest('Professor substituto não pode ser o mesmo que o titular');
+      }
+      const professor = await prisma.professor.findUnique({
+        where: { id: data.professorSubstitutoId },
+      });
+      if (!professor || !professor.ativo) {
+        throw ApiError.notFound('Professor substituto não encontrado ou inativo');
+      }
+    }
+
+    const aula = await prisma.aula.update({
+      where: { id },
+      data: { professorSubstitutoId: data.professorSubstitutoId },
+      include: {
+        academia: { select: { id: true, nome: true } },
+        professor: { select: { id: true, pessoa: { select: { nome: true } } } },
+        professorSubstituto: { select: { id: true, pessoa: { select: { nome: true } } } },
+      },
     });
 
     return aula as unknown as AulaResponse;

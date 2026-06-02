@@ -28,18 +28,13 @@ export class CadastroPublicoController {
   }
 
   /**
-   * GET /api/public/cadastro/status?email=xxx
-   * Verificar status do cadastro por email (público)
+   * GET /api/public/cadastro/:id/status
+   * Verificar status do cadastro por ID (público)
    */
   async verificarStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email } = req.query;
-
-      if (!email || typeof email !== 'string') {
-        return res.status(400).json(error('Email é obrigatório'));
-      }
-
-      const resultado = await cadastroPublicoService.verificarStatus(email);
+      const { id } = req.params;
+      const resultado = await cadastroPublicoService.verificarStatus(id);
       return res.json(success(resultado));
     } catch (err: any) {
       return res.status(500).json(error(err.message));

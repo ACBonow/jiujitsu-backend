@@ -11,6 +11,7 @@ import {
   aulaQuerySchema,
   templateAulaQuerySchema,
   gerarAulasSchema,
+  definirSubstitutoSchema,
 } from './aulas.schemas';
 
 const router = Router();
@@ -106,6 +107,15 @@ router.patch(
   authorize('ADMIN', 'PROFESSOR'),
   validateParams(aulaIdParamSchema),
   aulasController.cancelarAula
+);
+
+// PATCH /api/aulas/:id/substituto - Definir professor substituto (ADMIN)
+router.patch(
+  '/:id/substituto',
+  authorize('ADMIN'),
+  validateParams(aulaIdParamSchema),
+  validate(definirSubstitutoSchema),
+  aulasController.definirSubstituto
 );
 
 // DELETE /api/aulas/:id - Excluir aula (ADMIN)
