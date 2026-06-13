@@ -9,9 +9,9 @@ import {
   UpdateMatriculaInput,
   RegistrarPagamentoInput,
   GerarMensalidadesInput,
-  PlanoQueryInput,
-  MatriculaQueryInput,
-  MensalidadeQueryInput,
+  planoQuerySchema,
+  matriculaQuerySchema,
+  mensalidadeQuerySchema,
 } from './financeiro.schemas';
 
 // ==================== PLANOS CONTROLLER ====================
@@ -19,13 +19,9 @@ import {
 export class PlanosController {
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const params = req.query as unknown as PlanoQueryInput;
-      const result = await planosService.findAll({
-        ...params,
-        page: params.page ? Number(params.page) : undefined,
-        limit: params.limit ? Number(params.limit) : undefined,
-      });
-      res.json(paginated(result.data, result.total, Number(params.page) || 1, Number(params.limit) || 10));
+      const params = planoQuerySchema.parse(req.query);
+      const result = await planosService.findAll(params);
+      res.json(paginated(result.data, result.total, params.page ?? 1, params.limit ?? 10));
     } catch (error) {
       next(error);
     }
@@ -78,14 +74,12 @@ export class PlanosController {
 export class MatriculasController {
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const params = req.query as unknown as MatriculaQueryInput;
+      const params = matriculaQuerySchema.parse(req.query);
       const result = await matriculasService.findAll({
         ...params,
         academiaId: resolveAcademiaScope(req.user!, params.academiaId),
-        page: params.page ? Number(params.page) : undefined,
-        limit: params.limit ? Number(params.limit) : undefined,
       });
-      res.json(paginated(result.data, result.total, Number(params.page) || 1, Number(params.limit) || 10));
+      res.json(paginated(result.data, result.total, params.page ?? 1, params.limit ?? 10));
     } catch (error) {
       next(error);
     }
@@ -138,14 +132,12 @@ export class MatriculasController {
 export class MensalidadesController {
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const params = req.query as unknown as MensalidadeQueryInput;
+      const params = mensalidadeQuerySchema.parse(req.query);
       const result = await mensalidadesService.findAll({
         ...params,
         academiaId: resolveAcademiaScope(req.user!, params.academiaId),
-        page: params.page ? Number(params.page) : undefined,
-        limit: params.limit ? Number(params.limit) : undefined,
       });
-      res.json(paginated(result.data, result.total, Number(params.page) || 1, Number(params.limit) || 10));
+      res.json(paginated(result.data, result.total, params.page ?? 1, params.limit ?? 10));
     } catch (error) {
       next(error);
     }

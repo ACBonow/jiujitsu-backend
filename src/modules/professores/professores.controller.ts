@@ -1,16 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { professoresService } from './professores.service';
 import { success, paginated } from '../../shared/utils/api-response';
-import { CreateProfessorInput, UpdateProfessorInput, ProfessorQueryInput } from './professores.schemas';
+import { CreateProfessorInput, UpdateProfessorInput, professorQuerySchema } from './professores.schemas';
 
 export class ProfessoresController {
   async findAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, limit, ativo, modalidade, academiaId, search } = req.query as unknown as ProfessorQueryInput;
+      const { page, limit, ativo, modalidade, academiaId, search } = professorQuerySchema.parse(req.query);
 
       const result = await professoresService.findAll({
-        page: page ? Number(page) : undefined,
-        limit: limit ? Number(limit) : undefined,
+        page,
+        limit,
         ativo,
         modalidade,
         academiaId,
@@ -21,8 +21,8 @@ export class ProfessoresController {
         paginated(
           result.data,
           result.total,
-          Number(page) || 1,
-          Number(limit) || 10
+          page ?? 1,
+          limit ?? 10
         )
       );
     } catch (error) {

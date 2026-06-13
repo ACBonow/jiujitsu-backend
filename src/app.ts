@@ -17,6 +17,9 @@ import cadastroPublicoRoutes from './modules/cadastro-publico/cadastro-publico.r
 
 const app = express();
 
+// Required for express-rate-limit to work correctly behind Vercel's proxy
+app.set('trust proxy', 1);
+
 // Middlewares globais
 app.use(helmet());
 app.use(

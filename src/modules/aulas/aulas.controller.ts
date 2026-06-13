@@ -7,9 +7,9 @@ import {
   UpdateTemplateAulaInput,
   CreateAulaInput,
   UpdateAulaInput,
-  AulaQueryInput,
-  TemplateAulaQueryInput,
   GerarAulasInput,
+  templateAulaQuerySchema,
+  aulaQuerySchema,
 } from './aulas.schemas';
 
 export class AulasController {
@@ -17,22 +17,11 @@ export class AulasController {
 
   async findAllTemplates(req: Request, res: Response, next: NextFunction) {
     try {
-      const params = req.query as unknown as TemplateAulaQueryInput;
+      const params = templateAulaQuerySchema.parse(req.query);
 
-      const result = await aulasService.findAllTemplates({
-        ...params,
-        page: params.page ? Number(params.page) : undefined,
-        limit: params.limit ? Number(params.limit) : undefined,
-      });
+      const result = await aulasService.findAllTemplates(params);
 
-      res.json(
-        paginated(
-          result.data,
-          result.total,
-          Number(params.page) || 1,
-          Number(params.limit) || 10
-        )
-      );
+      res.json(paginated(result.data, result.total, params.page ?? 1, params.limit ?? 10));
     } catch (error) {
       next(error);
     }
@@ -83,23 +72,14 @@ export class AulasController {
 
   async findAllAulas(req: Request, res: Response, next: NextFunction) {
     try {
-      const params = req.query as unknown as AulaQueryInput;
+      const params = aulaQuerySchema.parse(req.query);
 
       const result = await aulasService.findAllAulas({
         ...params,
         academiaId: resolveAcademiaScope(req.user!, params.academiaId),
-        page: params.page ? Number(params.page) : undefined,
-        limit: params.limit ? Number(params.limit) : undefined,
       });
 
-      res.json(
-        paginated(
-          result.data,
-          result.total,
-          Number(params.page) || 1,
-          Number(params.limit) || 10
-        )
-      );
+      res.json(paginated(result.data, result.total, params.page ?? 1, params.limit ?? 10));
     } catch (error) {
       next(error);
     }
