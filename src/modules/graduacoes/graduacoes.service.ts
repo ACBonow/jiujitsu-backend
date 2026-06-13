@@ -176,40 +176,6 @@ export class GraduacoesService {
     return graduacao as unknown as GraduacaoResponse;
   }
 
-  async delete(id: string): Promise<void> {
-    const graduacao = await prisma.graduacao.findUnique({ where: { id } });
-
-    if (!graduacao) {
-      throw ApiError.notFound('Graduação não encontrada');
-    }
-
-    // Verificar se é a última graduação do aluno
-    const ultimaGraduacao = await prisma.graduacao.findFirst({
-      where: { alunoId: graduacao.alunoId },
-      orderBy: { dataPromocao: 'desc' },
-    });
-
-    if (ultimaGraduacao?.id !== id) {
-      throw ApiError.badRequest(
-        'Apenas a última graduação do aluno pode ser removida'
-      );
-    }
-
-    // Reverter graduação e atualizar aluno
-    await prisma.$transaction(async (tx) => {
-      await tx.graduacao.delete({ where: { id } });
-
-      // Reverter aluno para estado anterior
-      await tx.aluno.update({
-        where: { id: graduacao.alunoId },
-        data: {
-          faixa: graduacao.faixaAnterior,
-          graus: graduacao.grausAnteriores,
-          dataUltimaPromocao: null, // Poderia buscar a data da graduação anterior
-        },
-      });
-    });
-  }
 }
 
 export const graduacoesService = new GraduacoesService();

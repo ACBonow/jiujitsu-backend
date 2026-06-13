@@ -335,11 +335,11 @@ export class CadastroPublicoService {
   }
 
   /**
-   * Verificar status do cadastro por email
+   * Verificar status do cadastro por ID
    */
-  async verificarStatus(email: string) {
+  async verificarStatus(id: string) {
     const cadastro = await prisma.cadastroPendente.findUnique({
-      where: { email },
+      where: { id },
       select: {
         id: true,
         nome: true,
@@ -350,24 +350,10 @@ export class CadastroPublicoService {
     });
 
     if (!cadastro) {
-      // Verificar se já é pessoa cadastrada
-      const pessoa = await prisma.pessoa.findUnique({
-        where: { email },
-        select: { id: true, nome: true },
-      });
-
-      if (pessoa) {
-        return {
-          encontrado: true,
-          status: 'JA_CADASTRADO',
-          mensagem: 'Você já está cadastrado no sistema.',
-        };
-      }
-
       return {
         encontrado: false,
         status: null,
-        mensagem: 'Nenhum cadastro encontrado com este email.',
+        mensagem: 'Nenhum cadastro encontrado com este ID.',
       };
     }
 
@@ -381,6 +367,8 @@ export class CadastroPublicoService {
 
     return {
       encontrado: true,
+      id: cadastro.id,
+      nome: cadastro.nome,
       status: cadastro.status,
       mensagem: mensagens[cadastro.status],
       dataCadastro: cadastro.createdAt,

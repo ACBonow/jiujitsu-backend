@@ -35,12 +35,4 @@ router.post(
   graduacoesController.create
 );
 
-// DELETE /api/graduacoes/:id - Remover graduação (apenas ADMIN)
-router.delete(
-  '/:id',
-  authorize('ADMIN'),
-  validateParams(graduacaoIdParamSchema),
-  graduacoesController.delete
-);
-
 export default router;

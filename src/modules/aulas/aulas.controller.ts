@@ -10,6 +10,7 @@ import {
   GerarAulasInput,
   templateAulaQuerySchema,
   aulaQuerySchema,
+  DefinirSubstitutoInput,
 } from './aulas.schemas';
 
 export class AulasController {
@@ -161,6 +162,20 @@ export class AulasController {
       const data = req.body as GerarAulasInput;
       const result = await aulasService.gerarAulas(data);
       res.json(success(result, `${result.created} aulas geradas com sucesso`));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async definirSubstituto(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const data = req.body as DefinirSubstitutoInput;
+      const aula = await aulasService.definirSubstituto(id, data);
+      const msg = data.professorSubstitutoId
+        ? 'Professor substituto definido com sucesso'
+        : 'Professor substituto removido com sucesso';
+      res.json(success(aula, msg));
     } catch (error) {
       next(error);
     }

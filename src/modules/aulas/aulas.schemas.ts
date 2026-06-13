@@ -83,6 +83,10 @@ export const gerarAulasSchema = z.object({
   dataFim: z.coerce.date(),
 });
 
+export const definirSubstitutoSchema = z.object({
+  professorSubstitutoId: z.string().cuid('ID do professor inválido').nullable(),
+});
+
 export type CreateTemplateAulaInput = z.infer<typeof createTemplateAulaSchema>;
 export type UpdateTemplateAulaInput = z.infer<typeof updateTemplateAulaSchema>;
 export type CreateAulaInput = z.infer<typeof createAulaSchema>;
@@ -90,3 +94,4 @@ export type UpdateAulaInput = z.infer<typeof updateAulaSchema>;
 export type AulaQueryInput = z.infer<typeof aulaQuerySchema>;
 export type TemplateAulaQueryInput = z.infer<typeof templateAulaQuerySchema>;
 export type GerarAulasInput = z.infer<typeof gerarAulasSchema>;
+export type DefinirSubstitutoInput = z.infer<typeof definirSubstitutoSchema>;

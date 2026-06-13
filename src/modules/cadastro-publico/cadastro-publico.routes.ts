@@ -29,11 +29,11 @@ router.post(
 );
 
 /**
- * GET /api/public/cadastro/status?email=xxx
- * Verificar status do cadastro por email
+ * GET /api/public/cadastro/:id/status
+ * Verificar status do cadastro por ID
  */
 router.get(
-  '/public/cadastro/status',
+  '/public/cadastro/:id/status',
   createLimiter,
   cadastroPublicoController.verificarStatus.bind(cadastroPublicoController)
 );

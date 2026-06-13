@@ -61,17 +61,6 @@ export class GraduacoesController {
     }
   }
 
-  async delete(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-
-      await graduacoesService.delete(id);
-
-      res.json(success(null, 'Graduação removida e aluno revertido ao estado anterior'));
-    } catch (error) {
-      next(error);
-    }
-  }
 }
 
 export const graduacoesController = new GraduacoesController();
