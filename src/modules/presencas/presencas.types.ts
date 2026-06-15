@@ -12,6 +12,11 @@ export interface PresencaResponse {
       id: string;
       nome: string;
     };
+    professor: {
+      pessoa: {
+        nome: string;
+      };
+    };
   };
   aluno: {
     id: string;

@@ -218,6 +218,7 @@ export class AulasService {
           categoria: true,
           modalidade: true,
           status: true,
+          limiteAlunos: true,
           professor: { select: { pessoa: { select: { nome: true } } } },
           _count: { select: { presencas: true, reservas: true } },
         },

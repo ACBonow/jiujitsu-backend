@@ -47,6 +47,7 @@ export class PresencasService {
               categoria: true,
               modalidade: true,
               academia: { select: { id: true, nome: true } },
+              professor: { select: { pessoa: { select: { nome: true } } } },
             },
           },
           aluno: {
@@ -181,6 +182,7 @@ export class PresencasService {
               categoria: true,
               modalidade: true,
               academia: { select: { id: true, nome: true } },
+              professor: { select: { pessoa: { select: { nome: true } } } },
             },
           },
           aluno: {

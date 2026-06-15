@@ -74,6 +74,7 @@ export interface AulaListResponse {
   categoria: CategoriaTurma;
   modalidade: Modalidade;
   status: StatusAula;
+  limiteAlunos: number | null;
   professor: {
     pessoa: {
       nome: string;
