@@ -71,10 +71,10 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> PENDENTE : cron diário 6h cria mensalidade\nquando não existe para o mês corrente
 
-    PENDENTE --> PAGO : POST /financeiro/mensalidades/:id/pagar\n(admin ou recepcionista registra pagamento)
+    PENDENTE --> PAGO : POST /financeiro/pagamentos\n(admin ou recepcionista registra pagamento)
     PENDENTE --> ATRASADO : cron diário 9h:\ndataVencimento < today AND status = PENDENTE
 
-    ATRASADO --> PAGO : POST /financeiro/mensalidades/:id/pagar\n(pagamento em atraso ainda aceito)
+    ATRASADO --> PAGO : POST /financeiro/pagamentos\n(pagamento em atraso ainda aceito)
 
     PAGO --> [*]
 

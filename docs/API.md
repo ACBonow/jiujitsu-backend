@@ -524,15 +524,19 @@ Gera aulas para um período a partir dos templates ativos.
 
 ---
 
-### POST /api/financeiro/mensalidades/:id/pagar
-**Roles:** ADMIN, RECEPCIONISTA
+### GET/PUT /api/financeiro/academias/:academiaId/regra-pagamento
+**Roles:** GET → ADMIN, RECEPCIONISTA · PUT → ADMIN
+
+Cada academia configura suas próprias regras de desconto: antecipação (paga até o dia X) e forma de pagamento (dinheiro/PIX, sem taxa).
 
 ```json
-// Request
+// PUT Request
 {
-  "formaPagamento": "PIX",           // DINHEIRO|PIX|CARTAO_CREDITO|CARTAO_DEBITO|TRANSFERENCIA|BOLETO
-  "dataPagamento": "2026-06-08",     // opcional, default: hoje
-  "observacoes": "Pago via app"
+  "descontoAntecipadoPercentual": 5,     // x% se pago até diaLimiteAntecipado
+  "diaLimiteAntecipado": 10,             // 1-31
+  "descontoPagamentoImediatoPercentual": 3, // z% para as formas listadas abaixo
+  "formasPagamentoComDesconto": ["DINHEIRO", "PIX"],
+  "descontosAcumulativos": true          // true = soma os dois; false = usa o maior
 }
 
 // Response 200
@@ -540,13 +544,89 @@ Gera aulas para um período a partir dos templates ativos.
   "success": true,
   "data": {
     "id": "clx...",
-    "status": "PAGO",
-    "dataPagamento": "2026-06-08T00:00:00Z",
-    "formaPagamento": "PIX"
+    "academiaId": "clx...",
+    "descontoAntecipadoPercentual": 5,
+    "diaLimiteAntecipado": 10,
+    "descontoPagamentoImediatoPercentual": 3,
+    "formasPagamentoComDesconto": ["DINHEIRO", "PIX"],
+    "descontosAcumulativos": true
   }
 }
 
-// Erro 422: mensalidade já está paga
+// GET retorna `"data": null` quando a academia ainda não configurou nenhuma regra
+```
+
+---
+
+### POST /api/financeiro/pagamentos/preview
+**Roles:** ADMIN, RECEPCIONISTA
+
+Calcula o desconto aplicável (sem persistir nada) para 1 ou mais mensalidades — usado pelo modal de pagamento antes de confirmar. Todas as mensalidades devem pertencer à mesma academia.
+
+```json
+// Request
+{
+  "mensalidadeIds": ["clx-pai", "clx-filho"],  // 1+ (pagamento combinado: ex. pai e filho)
+  "formaPagamento": "PIX",
+  "dataPagamento": "2026-05-08"                 // opcional, default: hoje
+}
+
+// Response 200
+{
+  "success": true,
+  "data": {
+    "itens": [
+      {
+        "mensalidadeId": "clx-pai",
+        "alunoNome": "João",
+        "mesReferencia": "2026-05",
+        "valorOriginal": 200,
+        "percentualAplicado": 8,
+        "descontoValor": 16,
+        "valorFinal": 184
+      }
+    ],
+    "valorTotal": 184,
+    "descontoTotal": 16
+  }
+}
+```
+
+---
+
+### POST /api/financeiro/pagamentos
+**Roles:** ADMIN, RECEPCIONISTA
+
+Registra o pagamento de 1 ou mais mensalidades em uma única operação (`PagamentoLote`). Um pagamento "simples" é apenas um lote com um item. `valorPago` normalmente vem do preview, mas pode ser ajustado manualmente pelo operador.
+
+```json
+// Request
+{
+  "itens": [
+    { "mensalidadeId": "clx-pai", "valorPago": 184 },
+    { "mensalidadeId": "clx-filho", "valorPago": 138 }
+  ],
+  "formaPagamento": "PIX",           // DINHEIRO|PIX|CARTAO_CREDITO|CARTAO_DEBITO|TRANSFERENCIA|BOLETO
+  "dataPagamento": "2026-05-08",     // opcional, default: hoje
+  "observacoes": "Pago na recepção"
+}
+
+// Response 201
+{
+  "success": true,
+  "data": {
+    "id": "clx-lote",
+    "formaPagamento": "PIX",
+    "valorTotal": 322,
+    "descontoTotal": 28,
+    "mensalidades": [
+      { "id": "clx-pai", "mesReferencia": "2026-05", "valorOriginal": 200, "valorPago": 184 },
+      { "id": "clx-filho", "mesReferencia": "2026-05", "valorOriginal": 150, "valorPago": 138 }
+    ]
+  }
+}
+
+// Erro 400: mensalidades de academias diferentes, ou já pagas
 ```
 
 ---

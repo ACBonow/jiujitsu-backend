@@ -116,6 +116,12 @@ PENDENTE → ATRASADO (quando dataVencimento passa sem pagamento — via cron)
 ### Dia de Vencimento (diaVencimento)
 Campo na `Matrícula` que define o dia do mês em que as mensalidades vencem (1-31). A `dataVencimento` da mensalidade de cada mês é calculada combinando este dia com o mês de referência.
 
+### Regra de Pagamento (RegraPagamentoAcademia)
+Configuração de desconto que cada `Academia` define de forma independente para suas mensalidades: desconto por antecipação (x% se pago até o dia y do mês) e desconto por forma de pagamento (z% para formas sem taxa, como DINHEIRO/PIX — configurável). `descontosAcumulativos` decide se os dois se somam ou se aplica-se apenas o maior.
+
+### Pagamento em Lote (PagamentoLote)
+Registro de uma operação de pagamento que agrupa uma ou mais `Mensalidade`. Cobre tanto o pagamento de uma única mensalidade (lote de 1 item) quanto o **pagamento combinado** (ex: mensalidade do pai + do filho pagas juntas, numa única operação em dinheiro ou PIX). Não existe vínculo formal de família no sistema — o operador simplesmente seleciona as mensalidades pendentes que deseja quitar juntas.
+
 ---
 
 ## Pré-cadastro

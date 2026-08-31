@@ -81,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           data: {
             matriculaId: matricula.id,
             mesReferencia,
-            valor: matricula.valorFinal,
+            valorOriginal: matricula.valorFinal,
             dataVencimento,
             status: 'PENDENTE',
           },

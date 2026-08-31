@@ -193,6 +193,8 @@ model Academia {
   matriculas          Matricula[]
   professoresAcademia ProfessorAcademia[]
   planosAcademia      PlanoAcademia[]
+  regraPagamento      RegraPagamentoAcademia?
+  pagamentosLote      PagamentoLote[]
 
   @@map("academias")
 }
@@ -250,7 +252,8 @@ model Usuario {
   academia    Academia? @relation(fields: [academiaId], references: [id])
   
   // Registros feitos por este usuário
-  presencasRegistradas Presenca[] @relation("RegistradoPor")
+  presencasRegistradas      Presenca[]      @relation("RegistradoPor")
+  pagamentosLoteRegistrados PagamentoLote[]
   
   // Tokens e sessões
   refreshToken String?
@@ -602,29 +605,89 @@ model Matricula {
 // MENSALIDADE
 // ----------------------------------------------------------------------------
 model Mensalidade {
-  id              String            @id @default(cuid())
-  
-  mesReferencia   String            // "YYYY-MM" formato
-  valor           Decimal           @db.Decimal(10, 2)
-  dataVencimento  DateTime
-  dataPagamento   DateTime?
-  formaPagamento  FormaPagamento?
-  
-  status          StatusMensalidade @default(PENDENTE)
-  observacoes     String?
-  
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id                String            @id @default(cuid())
+
+  mesReferencia     String            // "YYYY-MM" formato
+  valorOriginal     Decimal           @db.Decimal(10, 2)
+  valorPago         Decimal?          @db.Decimal(10, 2)
+  descontoAplicado  Decimal?          @db.Decimal(10, 2)
+  dataVencimento    DateTime
+  dataPagamento     DateTime?
+  formaPagamento    FormaPagamento?
+
+  status            StatusMensalidade @default(PENDENTE)
+  observacoes       String?
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   // Relacionamentos
   matriculaId String
   matricula   Matricula @relation(fields: [matriculaId], references: [id], onDelete: Cascade)
 
+  pagamentoLoteId String?
+  pagamentoLote   PagamentoLote? @relation(fields: [pagamentoLoteId], references: [id])
+
   @@unique([matriculaId, mesReferencia]) // Uma mensalidade por mês por matrícula
   @@index([status])
   @@index([dataVencimento])
   @@index([mesReferencia])
+  @@index([pagamentoLoteId])
   @@map("mensalidades")
+}
+
+// ----------------------------------------------------------------------------
+// REGRA DE PAGAMENTO (Configuração de desconto por academia)
+// ----------------------------------------------------------------------------
+model RegraPagamentoAcademia {
+  id         String   @id @default(cuid())
+
+  // Desconto por antecipação: x% se pago até o dia y do mês
+  descontoAntecipadoPercentual Decimal? @db.Decimal(5, 2)
+  diaLimiteAntecipado          Int?     // 1-31
+
+  // Desconto por forma de pagamento: z% para formas sem taxa (dinheiro/pix)
+  descontoPagamentoImediatoPercentual Decimal?         @db.Decimal(5, 2)
+  formasPagamentoComDesconto          FormaPagamento[] @default([DINHEIRO, PIX])
+
+  // Se true, os dois descontos se somam; se false, aplica-se apenas o maior
+  descontosAcumulativos Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  academiaId String   @unique
+  academia   Academia @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+
+  @@map("regras_pagamento_academia")
+}
+
+// ----------------------------------------------------------------------------
+// PAGAMENTO EM LOTE (Registro de uma operação de pagamento, 1 ou N mensalidades)
+// ----------------------------------------------------------------------------
+model PagamentoLote {
+  id             String         @id @default(cuid())
+
+  formaPagamento FormaPagamento
+  dataPagamento  DateTime
+  valorTotal     Decimal        @db.Decimal(10, 2)
+  descontoTotal  Decimal        @db.Decimal(10, 2) @default(0)
+  observacoes    String?
+
+  createdAt      DateTime       @default(now())
+
+  // Relacionamentos
+  academiaId String
+  academia   Academia @relation(fields: [academiaId], references: [id])
+
+  registradoPorId String?
+  registradoPor   Usuario? @relation(fields: [registradoPorId], references: [id])
+
+  mensalidades Mensalidade[]
+
+  @@index([academiaId])
+  @@map("pagamentos_lote")
 }
 
 // ----------------------------------------------------------------------------

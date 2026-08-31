@@ -1,15 +1,24 @@
 import { Router } from 'express';
-import { planosController, matriculasController, mensalidadesController } from './financeiro.controller';
+import {
+  planosController,
+  matriculasController,
+  mensalidadesController,
+  regraPagamentoController,
+  pagamentosController,
+} from './financeiro.controller';
 import { validate, validateParams, validateQuery } from '../../shared/middlewares/validation.middleware';
-import { authenticate, authorize } from '../../shared/middlewares/auth.middleware';
+import { authenticate, authorize, checkAcademiaAccess } from '../../shared/middlewares/auth.middleware';
 import {
   createPlanoSchema,
   updatePlanoSchema,
   createMatriculaSchema,
   updateMatriculaSchema,
-  registrarPagamentoSchema,
+  regraPagamentoSchema,
+  previewPagamentoSchema,
+  registrarPagamentoLoteSchema,
   gerarMensalidadesSchema,
   idParamSchema,
+  academiaIdParamSchema,
   planoQuerySchema,
   matriculaQuerySchema,
   mensalidadeQuerySchema,
@@ -102,13 +111,43 @@ router.post(
   mensalidadesController.gerarMensalidades
 );
 
-// PATCH /api/financeiro/mensalidades/:id/pagar - Registrar pagamento (ADMIN, RECEPCIONISTA)
-router.patch(
-  '/mensalidades/:id/pagar',
+// ==================== REGRA DE PAGAMENTO ====================
+
+// GET /api/financeiro/academias/:academiaId/regra-pagamento - Buscar regra (ADMIN, RECEPCIONISTA)
+router.get(
+  '/academias/:academiaId/regra-pagamento',
   authorize('ADMIN', 'RECEPCIONISTA'),
-  validateParams(idParamSchema),
-  validate(registrarPagamentoSchema),
-  mensalidadesController.registrarPagamento
+  validateParams(academiaIdParamSchema),
+  checkAcademiaAccess,
+  regraPagamentoController.getByAcademia
+);
+
+// PUT /api/financeiro/academias/:academiaId/regra-pagamento - Criar/atualizar regra (ADMIN)
+router.put(
+  '/academias/:academiaId/regra-pagamento',
+  authorize('ADMIN'),
+  validateParams(academiaIdParamSchema),
+  checkAcademiaAccess,
+  validate(regraPagamentoSchema),
+  regraPagamentoController.upsert
+);
+
+// ==================== PAGAMENTOS (preview e registro, único ou combinado) ====================
+
+// POST /api/financeiro/pagamentos/preview - Calcular desconto antes de confirmar (ADMIN, RECEPCIONISTA)
+router.post(
+  '/pagamentos/preview',
+  authorize('ADMIN', 'RECEPCIONISTA'),
+  validate(previewPagamentoSchema),
+  pagamentosController.preview
+);
+
+// POST /api/financeiro/pagamentos - Registrar pagamento de 1+ mensalidades (ADMIN, RECEPCIONISTA)
+router.post(
+  '/pagamentos',
+  authorize('ADMIN', 'RECEPCIONISTA'),
+  validate(registrarPagamentoLoteSchema),
+  pagamentosController.registrar
 );
 
 export default router;

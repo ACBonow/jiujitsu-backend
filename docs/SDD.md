@@ -191,10 +191,27 @@ status (ATIVA|SUSPENSA|CANCELADA)
 #### Mensalidade
 ```
 id, matriculaId
-mesReferencia ("YYYY-MM"), valor, dataVencimento, dataPagamento
+mesReferencia ("YYYY-MM"), valorOriginal, valorPago, descontoAplicado
+dataVencimento, dataPagamento
 formaPagamento (DINHEIRO|PIX|CARTAO_CREDITO|CARTAO_DEBITO|TRANSFERENCIA|BOLETO)
 status (PENDENTE|PAGO|ATRASADO)
+pagamentoLoteId (opcional — vincula ao PagamentoLote quando paga)
 UNIQUE(matriculaId, mesReferencia)
+```
+
+#### RegraPagamentoAcademia
+```
+id, academiaId (unique)
+descontoAntecipadoPercentual, diaLimiteAntecipado (1-31)  — x% se pago até o dia y
+descontoPagamentoImediatoPercentual, formasPagamentoComDesconto (default: DINHEIRO, PIX) — z% para formas sem taxa
+descontosAcumulativos (default true) — soma os dois descontos, ou usa apenas o maior
+```
+
+#### PagamentoLote
+```
+id, academiaId, registradoPorId
+formaPagamento, dataPagamento, valorTotal, descontoTotal, observacoes
+→ 1:N com Mensalidade (permite pagamento combinado de várias mensalidades numa só operação, ex. pai e filho)
 ```
 
 #### CadastroPendente
@@ -410,14 +427,37 @@ EM_ANDAMENTO → CANCELADA (excepcional)
 
 | Método | Rota | Roles | Descrição |
 |--------|------|-------|-----------|
-| GET | /mensalidades | ADMIN, RECEPCIONISTA | Lista mensalidades (filtros: status, mês) |
-| POST | /mensalidades/:id/pagar | ADMIN, RECEPCIONISTA | Registra pagamento |
+| GET | /mensalidades | ADMIN, RECEPCIONISTA | Lista mensalidades (filtros: status — aceita múltiplos —, mês) |
 
 **Regras:**
 - Mensalidade é gerada automaticamente pelo cron diário (6h) para o mês corrente
 - `dataVencimento` = dia `diaVencimento` da Matrícula no mês de referência
 - Mensalidade vencida e não paga → status `ATRASADO` (verificado pelo cron 9h)
 - Aluno com mensalidade `ATRASADO` → status `INADIMPLENTE`
+
+#### Regra de Pagamento (por academia)
+
+| Método | Rota | Roles | Descrição |
+|--------|------|-------|-----------|
+| GET | /academias/:academiaId/regra-pagamento | ADMIN, RECEPCIONISTA | Busca a regra da academia (`null` se não configurada) |
+| PUT | /academias/:academiaId/regra-pagamento | ADMIN | Cria/atualiza a regra |
+
+**Regras:**
+- Cada academia define, de forma independente: desconto por antecipação (x% até o dia y) e desconto por forma de pagamento (z% para dinheiro/PIX, configurável)
+- `descontosAcumulativos` controla se os dois descontos se somam ou se aplica-se apenas o maior
+
+#### Pagamentos (registro de cobrança — único ou combinado)
+
+| Método | Rota | Roles | Descrição |
+|--------|------|-------|-----------|
+| POST | /pagamentos/preview | ADMIN, RECEPCIONISTA | Calcula o desconto aplicável para 1+ mensalidades, sem persistir |
+| POST | /pagamentos | ADMIN, RECEPCIONISTA | Registra o pagamento de 1+ mensalidades num único `PagamentoLote` |
+
+**Regras:**
+- Todas as mensalidades de uma mesma operação devem pertencer à mesma academia
+- O desconto é calculado a partir da `RegraPagamentoAcademia` (dia do pagamento + forma de pagamento); o operador pode ajustar `valorPago` manualmente antes de confirmar
+- Pagamento combinado (ex: mensalidade do pai + do filho) é apenas selecionar mais de uma mensalidade no mesmo `PagamentoLote` — não há vínculo formal de família no sistema
+- Mensalidade já `PAGO` não pode ser incluída em um novo pagamento
 
 ---
 

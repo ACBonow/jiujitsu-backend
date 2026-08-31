@@ -60,12 +60,15 @@ export interface MatriculaListResponse {
 export interface MensalidadeResponse {
   id: string;
   mesReferencia: string;
-  valor: number;
+  valorOriginal: number;
+  valorPago: number | null;
+  descontoAplicado: number | null;
   dataVencimento: Date;
   dataPagamento: Date | null;
   formaPagamento: FormaPagamento | null;
   status: StatusMensalidade;
   observacoes: string | null;
+  pagamentoLoteId: string | null;
   createdAt: Date;
   updatedAt: Date;
   matricula: {
@@ -86,7 +89,8 @@ export interface MensalidadeResponse {
 export interface MensalidadeListResponse {
   id: string;
   mesReferencia: string;
-  valor: number;
+  valorOriginal: number;
+  valorPago: number | null;
   dataVencimento: Date;
   status: StatusMensalidade;
   matricula: {
@@ -95,7 +99,63 @@ export interface MensalidadeListResponse {
         nome: string;
       };
     };
+    academia: {
+      id: string;
+      nome: string;
+    };
   };
+}
+
+// Regra de Pagamento
+export interface RegraPagamentoResponse {
+  id: string;
+  academiaId: string;
+  descontoAntecipadoPercentual: number | null;
+  diaLimiteAntecipado: number | null;
+  descontoPagamentoImediatoPercentual: number | null;
+  formasPagamentoComDesconto: FormaPagamento[];
+  descontosAcumulativos: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Pagamento (preview e lote)
+export interface PreviewPagamentoItem {
+  mensalidadeId: string;
+  alunoNome: string;
+  mesReferencia: string;
+  valorOriginal: number;
+  percentualAplicado: number;
+  descontoValor: number;
+  valorFinal: number;
+}
+
+export interface PreviewPagamentoResponse {
+  itens: PreviewPagamentoItem[];
+  valorTotal: number;
+  descontoTotal: number;
+}
+
+export interface PagamentoLoteResponse {
+  id: string;
+  academiaId: string;
+  formaPagamento: FormaPagamento;
+  dataPagamento: Date;
+  valorTotal: number;
+  descontoTotal: number;
+  observacoes: string | null;
+  createdAt: Date;
+  mensalidades: {
+    id: string;
+    mesReferencia: string;
+    valorOriginal: number;
+    valorPago: number | null;
+    aluno: {
+      pessoa: {
+        nome: string;
+      };
+    };
+  }[];
 }
 
 export interface CreatePlanoData {
@@ -114,11 +174,5 @@ export interface CreateMatriculaData {
   diaVencimento: number;
   dataInicio?: Date;
   dataFim?: Date | null;
-  observacoes?: string | null;
-}
-
-export interface RegistrarPagamentoData {
-  dataPagamento?: Date;
-  formaPagamento: FormaPagamento;
   observacoes?: string | null;
 }

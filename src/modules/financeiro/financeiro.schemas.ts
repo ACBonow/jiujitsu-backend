@@ -36,10 +36,37 @@ export const updateMatriculaSchema = z.object({
   observacoes: z.string().optional().nullable(),
 });
 
-// Mensalidade schemas
-export const registrarPagamentoSchema = z.object({
-  dataPagamento: z.coerce.date().optional(),
+// Regra de pagamento (por academia)
+export const regraPagamentoSchema = z.object({
+  descontoAntecipadoPercentual: z.number().min(0).max(100).optional().nullable(),
+  diaLimiteAntecipado: z.number().int().min(1).max(31).optional().nullable(),
+  descontoPagamentoImediatoPercentual: z.number().min(0).max(100).optional().nullable(),
+  formasPagamentoComDesconto: z.array(z.nativeEnum(FormaPagamento)).optional(),
+  descontosAcumulativos: z.boolean().optional(),
+});
+
+export const academiaIdParamSchema = z.object({
+  academiaId: z.string().cuid('ID da academia inválido'),
+});
+
+// Pagamento (preview e registro em lote — cobre pagamento único e combinado)
+export const previewPagamentoSchema = z.object({
+  mensalidadeIds: z.array(z.string().cuid()).min(1, 'Selecione ao menos uma mensalidade'),
   formaPagamento: z.nativeEnum(FormaPagamento),
+  dataPagamento: z.coerce.date().optional(),
+});
+
+export const registrarPagamentoLoteSchema = z.object({
+  itens: z
+    .array(
+      z.object({
+        mensalidadeId: z.string().cuid('ID da mensalidade inválido'),
+        valorPago: z.number().positive('Valor deve ser positivo'),
+      })
+    )
+    .min(1, 'Selecione ao menos uma mensalidade'),
+  formaPagamento: z.nativeEnum(FormaPagamento),
+  dataPagamento: z.coerce.date().optional(),
   observacoes: z.string().optional().nullable(),
 });
 
@@ -77,7 +104,9 @@ export const mensalidadeQuerySchema = z.object({
   matriculaId: z.string().cuid().optional(),
   alunoId: z.string().cuid().optional(),
   academiaId: z.string().cuid().optional(),
-  status: z.nativeEnum(StatusMensalidade).optional(),
+  status: z
+    .union([z.nativeEnum(StatusMensalidade), z.array(z.nativeEnum(StatusMensalidade))])
+    .optional(),
   mesReferencia: z.string().optional(),
 });
 
@@ -85,7 +114,9 @@ export type CreatePlanoInput = z.infer<typeof createPlanoSchema>;
 export type UpdatePlanoInput = z.infer<typeof updatePlanoSchema>;
 export type CreateMatriculaInput = z.infer<typeof createMatriculaSchema>;
 export type UpdateMatriculaInput = z.infer<typeof updateMatriculaSchema>;
-export type RegistrarPagamentoInput = z.infer<typeof registrarPagamentoSchema>;
+export type RegraPagamentoInput = z.infer<typeof regraPagamentoSchema>;
+export type PreviewPagamentoInput = z.infer<typeof previewPagamentoSchema>;
+export type RegistrarPagamentoLoteInput = z.infer<typeof registrarPagamentoLoteSchema>;
 export type GerarMensalidadesInput = z.infer<typeof gerarMensalidadesSchema>;
 export type PlanoQueryInput = z.infer<typeof planoQuerySchema>;
 export type MatriculaQueryInput = z.infer<typeof matriculaQuerySchema>;

@@ -4,6 +4,8 @@ import { Perfil, StatusAluno } from '@prisma/client';
 
 export async function limparBanco() {
   await prisma.mensalidade.deleteMany();
+  await prisma.pagamentoLote.deleteMany();
+  await prisma.regraPagamentoAcademia.deleteMany();
   await prisma.matricula.deleteMany();
   await prisma.presenca.deleteMany();
   await prisma.reserva.deleteMany();
@@ -65,4 +67,46 @@ export async function criarAluno(academiaId: string, dados?: Partial<{ status: S
     },
   });
   return { aluno, pessoa, usuario };
+}
+
+export async function criarPlano(dados?: { nome?: string; valorBase?: number }) {
+  return prisma.plano.create({
+    data: {
+      nome: dados?.nome ?? 'Plano Teste',
+      valorBase: dados?.valorBase ?? 200,
+      modalidades: ['JIUJITSU'],
+    },
+  });
+}
+
+export async function criarMatricula(
+  alunoId: string,
+  academiaId: string,
+  planoId: string,
+  dados?: Partial<{ valorFinal: number; diaVencimento: number }>
+) {
+  return prisma.matricula.create({
+    data: {
+      alunoId,
+      academiaId,
+      planoId,
+      valorFinal: dados?.valorFinal ?? 200,
+      diaVencimento: dados?.diaVencimento ?? 10,
+    },
+  });
+}
+
+export async function criarMensalidade(
+  matriculaId: string,
+  dados?: Partial<{ mesReferencia: string; valorOriginal: number; dataVencimento: Date; status: string }>
+) {
+  return prisma.mensalidade.create({
+    data: {
+      matriculaId,
+      mesReferencia: dados?.mesReferencia ?? '2026-05',
+      valorOriginal: dados?.valorOriginal ?? 200,
+      dataVencimento: dados?.dataVencimento ?? new Date('2026-05-10'),
+      status: (dados?.status as any) ?? 'PENDENTE',
+    },
+  });
 }

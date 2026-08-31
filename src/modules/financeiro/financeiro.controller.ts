@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { planosService, matriculasService, mensalidadesService } from './financeiro.service';
+import {
+  planosService,
+  matriculasService,
+  mensalidadesService,
+  regraPagamentoService,
+  pagamentosService,
+} from './financeiro.service';
 import { success, paginated } from '../../shared/utils/api-response';
 import { resolveAcademiaScope } from '../../shared/utils/academia-scope';
 import {
@@ -7,7 +13,9 @@ import {
   UpdatePlanoInput,
   CreateMatriculaInput,
   UpdateMatriculaInput,
-  RegistrarPagamentoInput,
+  RegraPagamentoInput,
+  PreviewPagamentoInput,
+  RegistrarPagamentoLoteInput,
   GerarMensalidadesInput,
   planoQuerySchema,
   matriculaQuerySchema,
@@ -153,17 +161,6 @@ export class MensalidadesController {
     }
   }
 
-  async registrarPagamento(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const data = req.body as RegistrarPagamentoInput;
-      const mensalidade = await mensalidadesService.registrarPagamento(id, data);
-      res.json(success(mensalidade, 'Pagamento registrado com sucesso'));
-    } catch (error) {
-      next(error);
-    }
-  }
-
   async gerarMensalidades(req: Request, res: Response, next: NextFunction) {
     try {
       const data = req.body as GerarMensalidadesInput;
@@ -175,6 +172,57 @@ export class MensalidadesController {
   }
 }
 
+// ==================== REGRA DE PAGAMENTO CONTROLLER ====================
+
+export class RegraPagamentoController {
+  async getByAcademia(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { academiaId } = req.params;
+      const regra = await regraPagamentoService.getByAcademia(academiaId);
+      res.json(success(regra));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async upsert(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { academiaId } = req.params;
+      const data = req.body as RegraPagamentoInput;
+      const regra = await regraPagamentoService.upsert(academiaId, data);
+      res.json(success(regra, 'Regra de pagamento salva com sucesso'));
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+// ==================== PAGAMENTOS CONTROLLER ====================
+
+export class PagamentosController {
+  async preview(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = req.body as PreviewPagamentoInput;
+      const result = await pagamentosService.preview(data, req.user!);
+      res.json(success(result));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async registrar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = req.body as RegistrarPagamentoLoteInput;
+      const lote = await pagamentosService.registrar(data, req.user!);
+      res.status(201).json(success(lote, 'Pagamento registrado com sucesso'));
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
 export const planosController = new PlanosController();
 export const matriculasController = new MatriculasController();
 export const mensalidadesController = new MensalidadesController();
+export const regraPagamentoController = new RegraPagamentoController();
+export const pagamentosController = new PagamentosController();
