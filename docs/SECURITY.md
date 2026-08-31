@@ -20,13 +20,17 @@
 
 ## Resumo Executivo
 
+**Atualizado em 2026-08-30** — status revisado contra o código atual (não apenas contra commits declarados).
+
 | Severidade | Quantidade | Status |
 |------------|-----------|--------|
 | 🔴 CRÍTICO | 5 | ✅ Todos corrigidos |
 | 🟠 ALTO | 6 | ✅ Todos corrigidos |
 | 🟡 MÉDIO | 5 | ✅ Todos corrigidos |
-| 🔵 BAIXO | 4 | ✅ SEC-017/014 corrigidos; SEC-018/020 pendentes |
-| **Total** | **20** | **18 corrigidos** |
+| 🔵 BAIXO | 4 | ✅ Todos endereçados (SEC-020 via logs nativos da Vercel, sem serviço externo — decisão do usuário) |
+| **Total** | **20** | **20 endereçados** |
+
+> A remediação sugerida para SEC-004 (ver abaixo) usava `reserva.aluno.usuario?.id`, mas `Aluno` não tem relação direta `usuario` no schema (só via `aluno.pessoa.usuario`). Esse caminho de `include` inválido foi implementado ao pé da letra e quebrava em runtime `POST /api/reservas` e `PATCH /api/reservas/:id/cancelar` (Prisma rejeita o `include`). Corrigido em 2026-08-30 em `reservas.service.ts`. Adicionalmente, a correção de SEC-005 (isolamento por academia) nunca chegou ao módulo `graduacoes` — o controller calculava o `academiaId` mas o `service` o descartava silenciosamente; também corrigido em 2026-08-30. CI (GitHub Actions) com `tsc --noEmit` foi adicionado aos dois repositórios nesta mesma data para pegar esse tipo de regressão automaticamente no futuro.
 
 **Prioridade imediata antes de qualquer deploy em produção com dados reais:**
 - SEC-001: Escalada de privilégio via aprovação de cadastro
@@ -480,9 +484,11 @@ if (err instanceof Prisma.PrismaClientValidationError) {
 
 ---
 
-### SEC-014 — Tokens Armazenados Duplicados no Frontend
+### SEC-014 — Tokens Armazenados Duplicados no Frontend — ✅ CORRIGIDO
 
-**Arquivo:** `jiujitsu-frontend/stores/auth-store.ts:28-32`  
+**Arquivo:** `jiujitsu-frontend/stores/auth-store.ts:28-32`
+
+> `api-client.ts` lê exclusivamente do Zustand store via `lib/auth-bridge.ts` (`getAuthState()`); não há mais `localStorage.setItem`/`getItem` manual de tokens fora do `persist` do Zustand.  
 **Arquivo:** `jiujitsu-frontend/lib/api-client.ts:16-20`
 
 **Descrição:**  
@@ -557,9 +563,11 @@ motivo: z.string().min(10, 'Motivo deve ter pelo menos 10 caracteres').max(500),
 
 ---
 
-### SEC-017 — Fallback para URL de Produção no Frontend
+### SEC-017 — Fallback para URL de Produção no Frontend — ✅ CORRIGIDO
 
 **Arquivo:** `jiujitsu-frontend/lib/api-client.ts:4`
+
+> Fora de produção, ausência de `NEXT_PUBLIC_API_URL` agora lança erro no boot em vez de apontar silenciosamente para produção.
 
 ```typescript
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jiujitsu-backend.vercel.app';
@@ -575,9 +583,11 @@ if (!API_BASE_URL) throw new Error('NEXT_PUBLIC_API_URL não configurado');
 
 ---
 
-### SEC-018 — Comparação de Token Por Mensagem (Frágil)
+### SEC-018 — Comparação de Token Por Mensagem (Frágil) — ✅ CORRIGIDO
 
 **Arquivo:** `jiujitsu-frontend/lib/api-client.ts:35`
+
+> Backend retorna `code: 'TOKEN_EXPIRED'` (`src/shared/utils/api-error.ts`) e o frontend compara por esse código, não mais pela mensagem.
 
 ```typescript
 if (error.response?.data?.message === 'Token expirado' && !originalRequest._retry) {
@@ -596,11 +606,11 @@ if (error.response?.data?.code === 'TOKEN_EXPIRED' && !originalRequest._retry) {
 
 ---
 
-### SEC-019 — Ausência de Complexidade Mínima de Senha
+### SEC-019 — Ausência de Complexidade Mínima de Senha — ✅ CORRIGIDO
 
-**Arquivo:** `src/modules/auth/auth.service.ts:169-196`
+**Arquivo:** `src/modules/auth/auth.schemas.ts:14-17`
 
-O `changePassword` apenas verifica a senha atual mas não impõe regras de complexidade para a nova senha. Usuários podem definir senhas como `12345678`.
+> `senhaNova` agora exige mínimo de 8 caracteres e ao menos uma letra maiúscula.
 
 **Remediação:** Adicionar ao schema de alteração de senha:
 ```typescript
@@ -612,17 +622,16 @@ senhaNova: z.string()
 
 ---
 
-### SEC-020 — Logs de Erros em Produção Sem Serviço de Observabilidade
+### SEC-020 — Logs de Erros em Produção Sem Serviço de Observabilidade — ✅ ENDEREÇADO (sem serviço externo)
 
-**Arquivo:** `src/shared/middlewares/error-handler.middleware.ts:9`
+**Arquivos:** `src/shared/middlewares/request-logger.middleware.ts`, `src/shared/middlewares/error-handler.middleware.ts`
 
-```typescript
-console.error('❌ Erro:', err); // apenas console
-```
+Decisão consciente do usuário: usar os logs nativos da Vercel (sem Sentry/Logtail/Datadog) em vez de um serviço externo. O que foi feito em 2026-08-31:
 
-Erros vão apenas para o console da Vercel, sem estruturação, correlação de requests ou alertas.
-
-**Remediação (futuro):** Integrar Sentry, Logtail ou Datadog para erros estruturados com stack trace e contexto de request.
+- `requestLogger` (novo middleware, primeiro da cadeia em `app.ts`) gera um `requestId` (`crypto.randomUUID()`) por requisição e loga uma linha JSON ao final de cada requisição — método, path, status, duração, `userId` (quando autenticado). Nível `info`/`warn`/`error` conforme o status code.
+- `error-handler.middleware.ts` loga uma linha JSON estruturada por exceção não tratada, com o mesmo `requestId` da linha de acesso (permite correlacionar as duas), nome/mensagem do erro e stack trace (só em `NODE_ENV=development` — produção não vaza stack no log).
+- Como consultar: `vercel logs <url-do-deployment>` via CLI, ou aba **Logs** do projeto no dashboard da Vercel. Como as linhas são JSON, dá pra filtrar por `"statusCode":5` ou por um `requestId` específico direto na busca de texto do dashboard.
+- Isso não substitui um serviço de observabilidade completo (sem alertas automáticos, sem agregação/dashboards, retenção limitada ao plano da Vercel) — se o volume de erros crescer a ponto de precisar de alertas, Sentry no backend continua sendo a recomendação natural (ver discussão registrada nesta sessão).
 
 ---
 
@@ -661,12 +670,12 @@ Erros vão apenas para o console da Vercel, sem estruturação, correlação de 
 
 ### Sprint 4 — Baixa prioridade (quando possível)
 
-| ID | Vulnerabilidade | Esforço | Impacto |
-|----|----------------|---------|---------|
-| SEC-017 | Fallback para URL de produção | Baixo | Baixo |
-| SEC-018 | Comparação de token por string | Baixo | Baixo |
-| SEC-019 | Sem complexidade mínima de senha | Baixo | Baixo |
-| SEC-020 | Sem observabilidade de erros | Alto | Baixo |
+| ID | Vulnerabilidade | Esforço | Impacto | Status |
+|----|----------------|---------|---------|--------|
+| SEC-017 | Fallback para URL de produção | Baixo | Baixo | ✅ Corrigido |
+| SEC-018 | Comparação de token por string | Baixo | Baixo | ✅ Corrigido |
+| SEC-019 | Sem complexidade mínima de senha | Baixo | Baixo | ✅ Corrigido |
+| SEC-020 | Sem observabilidade de erros | Alto | Baixo | ✅ Endereçado (logs nativos Vercel, sem serviço externo) |
 
 ---
 

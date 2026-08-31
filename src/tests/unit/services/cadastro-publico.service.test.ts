@@ -50,7 +50,7 @@ function setupAprovarMock() {
   vi.mocked(prisma.pessoa.findUnique).mockResolvedValue(null);
   vi.mocked(prisma.$transaction).mockImplementation(async (cb: any) =>
     cb({
-      pessoa: { create: vi.fn().mockResolvedValue({ id: 'pessoa-nova', ...cadastroPendente }) },
+      pessoa: { create: vi.fn().mockResolvedValue({ ...cadastroPendente, id: 'pessoa-nova' }) },
       aluno: { create: vi.fn().mockResolvedValue({ id: 'aluno-novo', faixa: 'BRANCA', graus: 0 }) },
       professor: { create: vi.fn().mockResolvedValue({ id: 'prof-novo' }) },
       usuario: { create: vi.fn().mockResolvedValue({ id: 'user-novo', email: cadastroPendente.email, perfil: 'ALUNO' }) },

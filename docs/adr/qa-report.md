@@ -1,9 +1,39 @@
 # QA Report — Jiujitsu Academy
 
-**Data:** 14/06/2026  
-**Ambiente:** https://jiujitsu-frontend-tan.vercel.app  
-**Testado por:** Claude (QA automatizado)  
+**Data:** 14/06/2026
+**Ambiente:** https://jiujitsu-frontend-tan.vercel.app
+**Testado por:** Claude (QA automatizado)
 **Usuário de teste:** bonow.arthur@gmail.com (perfil: PROFESSOR)
+
+---
+
+## Status atualizado (2026-08-30, revisão de código)
+
+| Bug | Status | Observação |
+|-----|--------|------------|
+| BUG-01 | ✅ Corrigido | commit `a06bd22` |
+| BUG-02 | ✅ Corrigido | commit `e571ef1` (modo Editar/Cancelar em vez de tela sempre editável) |
+| BUG-03 | ✅ Corrigido | `app/not-found.tsx` customizado existe |
+| BUG-04 | ✅ Corrigido | commit `a06bd22` |
+| BUG-05 | ✅ Corrigido | commit `e571ef1` |
+| BUG-06 | ✅ Corrigido | commit `e571ef1` |
+| BUG-07 | ✅ Corrigido | Menu mobile com hambúrguer (`Sheet` + `SheetTrigger` em `components/layout/header.tsx`), sidebar oculta com `hidden md:block` e substituída por drawer em telas pequenas |
+| BUG-08 | ✅ Corrigido | commit `e571ef1` |
+| BUG-09 | ⚠️ Não verificável via código | Dado de teste ("Comedor de casadas") fica no banco, não no código-fonte — verificar/limpar diretamente no ambiente se ainda presente |
+| BUG-10 | ✅ Corrigido | commit `e571ef1` (filtros em `/aulas`) |
+| BUG-11 | ⚠️ Não verificado | Requer teste manual em navegador (race condition de hidratação) — não é possível confirmar por leitura estática de código |
+
+**Melhorias sugeridas — status:**
+- Paginação: ✅ implementada (`components/ui/data-table.tsx`)
+- Ordenação por coluna: ✅ implementada (`@tanstack/react-table` `getSortedRowModel` em `data-table.tsx`)
+- Título da aba dinâmico por página: ✅ implementado em 2026-08-31 (`hooks/use-page-title.ts`, chamado de dentro de `components/layout/page-header.tsx` — cobre praticamente toda rota autenticada automaticamente; login e 404 setados à parte)
+- Página de detalhes somente-leitura: ✅ implementada para Alunos/Academias/Professores (modo Editar/Cancelar, ver BUG-02)
+
+## Melhorias adicionais de mobile/UX (2026-08-31)
+
+- **Teclado mobile correto por tipo de campo:** CPF, CEP e "Número" (endereço) agora usam `inputMode="numeric"`; campos de telefone usam `type="tel" inputMode="tel"` — antes todos abriam o teclado alfabético completo em mobile. Aplicado em `academia-form.tsx`, `aluno-form.tsx`, `professor-form.tsx` e no formulário público de pré-cadastro.
+- **Alvos de toque:** os tamanhos `icon`/`icon-sm`/`icon-lg` do `Button` (usados nos menus "..." das tabelas, no gatilho do menu hambúrguer, etc.) foram de 32-36px para 36-48px, mais perto da recomendação de 44px (Apple HIG / WCAG 2.5.5). Mudança feita em `components/ui/button.tsx` a pedido explícito do usuário (esse diretório normalmente não é modificado).
+- Build de produção (`next build`) e os 60 testes do frontend seguem passando após as mudanças.
 
 ---
 

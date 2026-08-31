@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
-import { PaginationInput, PaginationParams, getPaginationParams } from '../../shared/utils/pagination';
+import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Faixa, StatusAluno } from '@prisma/client';
 import { CreateAlunoInput, UpdateAlunoInput } from './alunos.schemas';
 import { AlunoResponse, AlunoListResponse, AlunoWithMatriculas } from './alunos.types';
@@ -224,9 +224,6 @@ export class AlunosService {
       return tx.aluno.update({
         where: { id },
         data: {
-          faixa: data.faixa,
-          graus: data.graus,
-          status: data.status,
           peso: data.peso,
           categoriaIdade: data.categoriaIdade,
           categoriaPeso: data.categoriaPeso,
@@ -295,7 +292,7 @@ export class AlunosService {
 
   async getPresencas(
     alunoId: string,
-    params: PaginationParams
+    params: PaginationInput
   ): Promise<{ data: any[]; total: number }> {
     const { skip, take } = getPaginationParams(params);
 

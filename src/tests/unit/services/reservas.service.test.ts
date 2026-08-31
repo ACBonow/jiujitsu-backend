@@ -36,7 +36,7 @@ const aulaBase = {
 const alunoBase = {
   id: 'aluno-1',
   faltasReservas: 0,
-  usuario: { id: 'usuario-aluno-1', academiaId: 'academia-1' },
+  pessoa: { usuario: { id: 'usuario-aluno-1', academiaId: 'academia-1' } },
 };
 
 const userAdmin = { id: 'user-admin', perfil: 'ADMIN' as const, academiaId: undefined };
@@ -160,7 +160,7 @@ describe('ReservasService.create', () => {
   it('lança 403 quando ALUNO tenta criar reserva para outro aluno', async () => {
     vi.mocked(prisma.aluno.findUnique).mockResolvedValue({
       ...alunoBase,
-      usuario: { id: 'outro-usuario', academiaId: 'academia-1' },
+      pessoa: { usuario: { id: 'outro-usuario', academiaId: 'academia-1' } },
     } as any);
 
     await expect(
@@ -234,7 +234,7 @@ describe('ReservasService.cancelar', () => {
     aulaId: 'aula-1',
     alunoId: 'aluno-1',
     aula: { ...aulaBase, dataHora: new Date(Date.now() + 3600_000) },
-    aluno: { id: 'aluno-1', usuario: { id: 'usuario-aluno-1' } },
+    aluno: { id: 'aluno-1', pessoa: { usuario: { id: 'usuario-aluno-1' } } },
   };
 
   beforeEach(() => {

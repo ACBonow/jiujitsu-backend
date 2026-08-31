@@ -5,10 +5,11 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsup src && prisma generate",
+    "build": "tsup && prisma generate",
     "start": "node dist/server.js",
     "vercel-build": "prisma generate",
     "postinstall": "prisma generate",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

@@ -25,6 +25,7 @@ const ordemFaixas: Faixa[] = [
 interface GraduacaoFilters extends PaginationInput {
   alunoId?: string;
   faixa?: Faixa;
+  academiaId?: string;
   dataInicio?: Date;
   dataFim?: Date;
 }
@@ -44,6 +45,17 @@ export class GraduacoesService {
       where.dataPromocao = {};
       if (params.dataInicio) where.dataPromocao.gte = startOfDay(params.dataInicio);
       if (params.dataFim) where.dataPromocao.lte = endOfDay(params.dataFim);
+    }
+
+    if (params.academiaId) {
+      where.aluno = {
+        matriculas: {
+          some: {
+            academiaId: params.academiaId,
+            status: 'ATIVA',
+          },
+        },
+      };
     }
 
     const [graduacoes, total] = await Promise.all([

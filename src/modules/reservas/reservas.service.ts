@@ -263,13 +263,13 @@ export class ReservasService {
     // Verificar se aluno existe
     const aluno = await prisma.aluno.findUnique({
       where: { id: data.alunoId },
-      include: { usuario: { select: { id: true, academiaId: true } } },
+      include: { pessoa: { include: { usuario: { select: { id: true, academiaId: true } } } } },
     });
     if (!aluno) throw ApiError.notFound('Aluno não encontrado');
 
     // Aluno só pode criar reserva para si mesmo; gestores só dentro de sua academia
     if (currentUser.perfil === 'ALUNO') {
-      if (aluno.usuario?.id !== currentUser.id) {
+      if (aluno.pessoa.usuario?.id !== currentUser.id) {
         throw ApiError.forbidden('Você só pode criar reservas para si mesmo');
       }
     } else if (currentUser.academiaId) {
@@ -374,7 +374,7 @@ export class ReservasService {
       where: { id },
       include: {
         aula: true,
-        aluno: { include: { usuario: { select: { id: true } } } },
+        aluno: { include: { pessoa: { include: { usuario: { select: { id: true } } } } } },
       },
     });
 
@@ -383,7 +383,7 @@ export class ReservasService {
     }
 
     // Verificar propriedade: aluno só cancela a própria reserva; gestores cancelam na sua academia
-    const ehDono = reserva.aluno.usuario?.id === currentUser.id;
+    const ehDono = reserva.aluno.pessoa.usuario?.id === currentUser.id;
     const ehGestor = ['ADMIN', 'PROFESSOR', 'RECEPCIONISTA'].includes(currentUser.perfil);
     if (!ehDono && !ehGestor) {
       throw ApiError.forbidden('Você não pode cancelar esta reserva');

@@ -4,9 +4,24 @@ import { ApiError } from '../utils/api-error';
 import { error } from '../utils/api-response';
 import { config } from '../../config/env';
 
+const logError = (req: Request, err: Error, extra?: Record<string, unknown>) => {
+  console.error(
+    JSON.stringify({
+      level: 'error',
+      requestId: req.id,
+      method: req.method,
+      path: req.originalUrl,
+      name: err.name,
+      message: err.message,
+      stack: config.server.isDevelopment ? err.stack : undefined,
+      timestamp: new Date().toISOString(),
+      ...extra,
+    })
+  );
+};
+
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
-  // Log do erro (em produção, enviar para serviço de log)
-  console.error('❌ Erro:', err);
+  logError(req, err);
 
   // ApiError customizado
   if (err instanceof ApiError) {
@@ -51,9 +66,8 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
     }
   }
 
-  // Prisma Validation Error — não expor detalhes internos do schema
+  // Prisma Validation Error — não expor detalhes internos do schema (já logado acima)
   if (err instanceof Prisma.PrismaClientValidationError) {
-    console.error('Prisma Validation Error (interno):', err.message);
     return res.status(400).json(
       error('Dados inválidos para a operação')
     );

@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config/env';
 import { errorHandler } from './shared/middlewares/error-handler.middleware';
+import { requestLogger } from './shared/middlewares/request-logger.middleware';
 import { apiLimiter } from './shared/middlewares/rate-limit.middleware';
 import authRoutes from './modules/auth/auth.routes';
 import academiasRoutes from './modules/academias/academias.routes';
@@ -21,6 +22,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Middlewares globais
+app.use(requestLogger);
 app.use(helmet());
 app.use(
   cors({

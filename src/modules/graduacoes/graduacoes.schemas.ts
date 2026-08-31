@@ -18,6 +18,7 @@ export const graduacaoQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
   alunoId: z.string().cuid().optional(),
   faixa: z.nativeEnum(Faixa).optional(),
+  academiaId: z.string().cuid().optional(),
   dataInicio: z.coerce.date().optional(),
   dataFim: z.coerce.date().optional(),
 });
