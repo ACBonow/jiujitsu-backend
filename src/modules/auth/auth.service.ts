@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { comparePassword, hashPassword } from '../../shared/utils/password-hash';
 import {
   generateAccessToken,
@@ -36,17 +37,17 @@ export class AuthService {
     });
 
     if (!usuario) {
-      throw ApiError.unauthorized('Email ou senha inválidos');
+      throw ApiError.unauthorized('Email ou senha inválidos', ErrorCodes.AUTH_INVALID_CREDENTIALS);
     }
 
     if (!usuario.ativo) {
-      throw ApiError.forbidden('Usuário inativo');
+      throw ApiError.forbidden('Usuário inativo', ErrorCodes.AUTH_USER_INACTIVE);
     }
 
     // Verificar senha
     const senhaValida = await comparePassword(senha, usuario.senha);
     if (!senhaValida) {
-      throw ApiError.unauthorized('Email ou senha inválidos');
+      throw ApiError.unauthorized('Email ou senha inválidos', ErrorCodes.AUTH_INVALID_CREDENTIALS);
     }
 
     // Gerar tokens
@@ -109,11 +110,11 @@ export class AuthService {
     });
 
     if (!usuario || !usuario.ativo) {
-      throw ApiError.unauthorized('Usuário inválido ou inativo');
+      throw ApiError.unauthorized('Usuário inválido ou inativo', ErrorCodes.AUTH_USER_INVALID_OR_INACTIVE);
     }
 
     if (usuario.refreshToken !== hashRefreshToken(refreshToken)) {
-      throw ApiError.unauthorized('Refresh token inválido');
+      throw ApiError.unauthorized('Refresh token inválido', ErrorCodes.AUTH_REFRESH_TOKEN_INVALID);
     }
 
     // Gerar novos tokens
@@ -165,7 +166,7 @@ export class AuthService {
     });
 
     if (!usuario) {
-      throw ApiError.notFound('Usuário não encontrado');
+      throw ApiError.notFound('Usuário não encontrado', ErrorCodes.AUTH_USER_NOT_FOUND);
     }
 
     return usuario;
@@ -182,13 +183,13 @@ export class AuthService {
     });
 
     if (!usuario) {
-      throw ApiError.notFound('Usuário não encontrado');
+      throw ApiError.notFound('Usuário não encontrado', ErrorCodes.AUTH_USER_NOT_FOUND);
     }
 
     // Verificar senha atual
     const senhaValida = await comparePassword(senhaAtual, usuario.senha);
     if (!senhaValida) {
-      throw ApiError.badRequest('Senha atual incorreta');
+      throw ApiError.badRequest('Senha atual incorreta', ErrorCodes.AUTH_CURRENT_PASSWORD_INCORRECT);
     }
 
     // Hash da nova senha

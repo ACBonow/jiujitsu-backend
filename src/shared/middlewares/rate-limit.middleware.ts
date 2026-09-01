@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { CONSTANTS } from '../../config/constants';
+import { ErrorCodes } from '../constants/error-codes';
 
 // Rate limit geral para a API
 export const apiLimiter = rateLimit({
@@ -8,6 +9,7 @@ export const apiLimiter = rateLimit({
   message: {
     success: false,
     message: 'Muitas requisições. Por favor, tente novamente mais tarde.',
+    code: ErrorCodes.RATE_LIMIT_GENERAL,
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -20,6 +22,7 @@ export const loginLimiter = rateLimit({
   message: {
     success: false,
     message: 'Muitas tentativas de login. Por favor, aguarde 15 minutos e tente novamente.',
+    code: ErrorCodes.RATE_LIMIT_LOGIN,
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -33,6 +36,7 @@ export const createLimiter = rateLimit({
   message: {
     success: false,
     message: 'Muitas criações em pouco tempo. Por favor, aguarde um pouco.',
+    code: ErrorCodes.RATE_LIMIT_CREATE,
   },
   standardHeaders: true,
   legacyHeaders: false,

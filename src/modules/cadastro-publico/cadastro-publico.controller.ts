@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { cadastroPublicoService } from './cadastro-publico.service';
-import { success, paginated, error } from '../../shared/utils/api-response';
+import { success, paginated } from '../../shared/utils/api-response';
+import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 
 export class CadastroPublicoController {
   /**
@@ -22,8 +24,8 @@ export class CadastroPublicoController {
           'Cadastro realizado com sucesso! Aguarde a aprovação de um administrador.'
         )
       );
-    } catch (err: any) {
-      return res.status(400).json(error(err.message));
+    } catch (err) {
+      next(err);
     }
   }
 
@@ -36,8 +38,8 @@ export class CadastroPublicoController {
       const { id } = req.params;
       const resultado = await cadastroPublicoService.verificarStatus(id);
       return res.json(success(resultado));
-    } catch (err: any) {
-      return res.status(500).json(error(err.message));
+    } catch (err) {
+      next(err);
     }
   }
 
@@ -55,8 +57,8 @@ export class CadastroPublicoController {
       return res.json(
         paginated(resultado.cadastros, resultado.total, resultado.page, resultado.limit)
       );
-    } catch (err: any) {
-      return res.status(500).json(error(err.message));
+    } catch (err) {
+      next(err);
     }
   }
 
@@ -75,8 +77,8 @@ export class CadastroPublicoController {
       return res.json(
         paginated(resultado.cadastros, resultado.total, resultado.page, resultado.limit)
       );
-    } catch (err: any) {
-      return res.status(500).json(error(err.message));
+    } catch (err) {
+      next(err);
     }
   }
 
@@ -90,12 +92,12 @@ export class CadastroPublicoController {
       const cadastro = await cadastroPublicoService.buscarPorId(id);
 
       if (!cadastro) {
-        return res.status(404).json(error('Cadastro não encontrado'));
+        throw ApiError.notFound('Cadastro não encontrado', ErrorCodes.CADASTRO_PUBLICO_NOT_FOUND);
       }
 
       return res.json(success(cadastro));
-    } catch (err: any) {
-      return res.status(500).json(error(err.message));
+    } catch (err) {
+      next(err);
     }
   }
 
@@ -133,8 +135,8 @@ export class CadastroPublicoController {
       const resultado = await cadastroPublicoService.rejeitar(id, motivo, userId);
 
       return res.json(success(resultado, 'Cadastro rejeitado.'));
-    } catch (err: any) {
-      return res.status(400).json(error(err.message));
+    } catch (err) {
+      next(err);
     }
   }
 }

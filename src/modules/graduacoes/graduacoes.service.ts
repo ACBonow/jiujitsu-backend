@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Faixa } from '@prisma/client';
 import { startOfDay, endOfDay } from 'date-fns';
@@ -93,7 +94,7 @@ export class GraduacoesService {
     });
 
     if (!graduacao) {
-      throw ApiError.notFound('Graduação não encontrada');
+      throw ApiError.notFound('Graduação não encontrada', ErrorCodes.GRADUACAO_NOT_FOUND);
     }
 
     return graduacao as unknown as GraduacaoResponse;
@@ -101,7 +102,7 @@ export class GraduacoesService {
 
   async findByAluno(alunoId: string): Promise<GraduacaoListResponse[]> {
     const aluno = await prisma.aluno.findUnique({ where: { id: alunoId } });
-    if (!aluno) throw ApiError.notFound('Aluno não encontrado');
+    if (!aluno) throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
 
     const graduacoes = await prisma.graduacao.findMany({
       where: { alunoId },
@@ -122,7 +123,7 @@ export class GraduacoesService {
   async create(data: CreateGraduacaoInput): Promise<GraduacaoResponse> {
     // Verificar se aluno existe
     const aluno = await prisma.aluno.findUnique({ where: { id: data.alunoId } });
-    if (!aluno) throw ApiError.notFound('Aluno não encontrado');
+    if (!aluno) throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
 
     // Validar progressão de faixa
     const indiceFaixaAtual = ordemFaixas.indexOf(aluno.faixa);
@@ -133,18 +134,20 @@ export class GraduacoesService {
     const promocaoValida = indiceFaixaNova >= indiceFaixaAtual;
 
     if (!promocaoValida) {
-      throw ApiError.badRequest('Não é possível regredir de faixa');
+      throw ApiError.badRequest('Não é possível regredir de faixa', ErrorCodes.GRADUACAO_CANNOT_DOWNGRADE_FAIXA);
     }
 
     if (mesmaFaixa && data.grausNovos <= aluno.graus) {
-      throw ApiError.badRequest('Não é possível regredir de grau na mesma faixa');
+      throw ApiError.badRequest('Não é possível regredir de grau na mesma faixa', ErrorCodes.GRADUACAO_CANNOT_DOWNGRADE_GRAU);
     }
 
     // Validar número de graus conforme a faixa
     const maxGraus = data.faixaNova === 'PRETA' ? 6 : 4;
     if (data.grausNovos > maxGraus) {
       throw ApiError.badRequest(
-        `Faixa ${data.faixaNova} permite no máximo ${maxGraus} graus`
+        `Faixa ${data.faixaNova} permite no máximo ${maxGraus} graus`,
+        ErrorCodes.GRADUACAO_MAX_GRAUS_EXCEEDED,
+        { faixa: data.faixaNova, maxGraus }
       );
     }
 

@@ -19,6 +19,7 @@ export interface ApiErrorResponse {
   success: false;
   message: string;
   errors?: any;
+  code?: string;
 }
 
 export const success = <T>(data: T, message?: string): ApiSuccessResponse<T> => ({
@@ -43,8 +44,9 @@ export const paginated = <T>(
   },
 });
 
-export const error = (message: string, errors?: any): ApiErrorResponse => ({
+export const error = (message: string, errors?: any, code?: string): ApiErrorResponse => ({
   success: false,
   message,
   errors,
+  code,
 });

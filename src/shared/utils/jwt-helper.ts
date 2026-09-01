@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../../config/env';
 import { ApiError } from './api-error';
+import { ErrorCodes } from '../constants/error-codes';
 
 export interface JWTPayload {
   userId: string;
@@ -27,7 +28,7 @@ export const verifyAccessToken = (token: string): JWTPayload => {
     if (error instanceof jwt.TokenExpiredError) {
       throw ApiError.tokenExpired();
     }
-    throw ApiError.unauthorized('Token inválido');
+    throw ApiError.unauthorized('Token inválido', ErrorCodes.AUTH_TOKEN_INVALID);
   }
 };
 
@@ -36,8 +37,8 @@ export const verifyRefreshToken = (token: string): JWTPayload => {
     return jwt.verify(token, config.jwt.refreshSecret) as JWTPayload;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw ApiError.unauthorized('Refresh token expirado');
+      throw ApiError.unauthorized('Refresh token expirado', ErrorCodes.AUTH_REFRESH_TOKEN_EXPIRED);
     }
-    throw ApiError.unauthorized('Refresh token inválido');
+    throw ApiError.unauthorized('Refresh token inválido', ErrorCodes.AUTH_REFRESH_TOKEN_INVALID);
   }
 };

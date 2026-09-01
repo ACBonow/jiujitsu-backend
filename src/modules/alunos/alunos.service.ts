@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Faixa, StatusAluno } from '@prisma/client';
 import { CreateAlunoInput, UpdateAlunoInput } from './alunos.schemas';
@@ -98,7 +99,7 @@ export class AlunosService {
     });
 
     if (!aluno) {
-      throw ApiError.notFound('Aluno não encontrado');
+      throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
     }
 
     return aluno as unknown as AlunoWithMatriculas;
@@ -112,7 +113,7 @@ export class AlunosService {
       });
 
       if (existingCpf) {
-        throw ApiError.conflict('CPF já cadastrado');
+        throw ApiError.conflict('CPF já cadastrado', ErrorCodes.CPF_ALREADY_EXISTS);
       }
     }
 
@@ -123,7 +124,7 @@ export class AlunosService {
       });
 
       if (existingEmail) {
-        throw ApiError.conflict('Email já cadastrado');
+        throw ApiError.conflict('Email já cadastrado', ErrorCodes.EMAIL_ALREADY_EXISTS);
       }
     }
 
@@ -175,7 +176,7 @@ export class AlunosService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Aluno não encontrado');
+      throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
     }
 
     // Verificar se CPF já existe em outra pessoa (se fornecido)
@@ -185,7 +186,7 @@ export class AlunosService {
       });
 
       if (existingCpf) {
-        throw ApiError.conflict('CPF já cadastrado');
+        throw ApiError.conflict('CPF já cadastrado', ErrorCodes.CPF_ALREADY_EXISTS);
       }
     }
 
@@ -196,7 +197,7 @@ export class AlunosService {
       });
 
       if (existingEmail) {
-        throw ApiError.conflict('Email já cadastrado');
+        throw ApiError.conflict('Email já cadastrado', ErrorCodes.EMAIL_ALREADY_EXISTS);
       }
     }
 
@@ -255,13 +256,14 @@ export class AlunosService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Aluno não encontrado');
+      throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
     }
 
     // Verificar se há dependências
     if (existing._count.matriculas > 0 || existing._count.presencas > 0) {
       throw ApiError.conflict(
-        'Aluno possui matrículas ou presenças vinculadas. Altere o status para INATIVO.'
+        'Aluno possui matrículas ou presenças vinculadas. Altere o status para INATIVO.',
+        ErrorCodes.ALUNO_HAS_LINKED_RECORDS
       );
     }
 
@@ -278,7 +280,7 @@ export class AlunosService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Aluno não encontrado');
+      throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
     }
 
     const aluno = await prisma.aluno.update({
@@ -301,7 +303,7 @@ export class AlunosService {
     });
 
     if (!aluno) {
-      throw ApiError.notFound('Aluno não encontrado');
+      throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
     }
 
     const [presencas, total] = await Promise.all([
@@ -336,7 +338,7 @@ export class AlunosService {
     });
 
     if (!aluno) {
-      throw ApiError.notFound('Aluno não encontrado');
+      throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
     }
 
     const graduacoes = await prisma.graduacao.findMany({

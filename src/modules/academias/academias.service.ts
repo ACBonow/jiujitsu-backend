@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { CreateAcademiaInput, UpdateAcademiaInput } from './academias.schemas';
 import { AcademiaResponse, AcademiaWithStats } from './academias.types';
@@ -50,7 +51,7 @@ export class AcademiasService {
     });
 
     if (!academia) {
-      throw ApiError.notFound('Academia não encontrada');
+      throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
     }
 
     return academia;
@@ -64,7 +65,7 @@ export class AcademiasService {
       });
 
       if (existingCnpj) {
-        throw ApiError.conflict('CNPJ já cadastrado');
+        throw ApiError.conflict('CNPJ já cadastrado', ErrorCodes.CNPJ_ALREADY_EXISTS);
       }
     }
 
@@ -82,7 +83,7 @@ export class AcademiasService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Academia não encontrada');
+      throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
     }
 
     // Verificar se CNPJ já existe em outra academia (se fornecido)
@@ -92,7 +93,7 @@ export class AcademiasService {
       });
 
       if (existingCnpj) {
-        throw ApiError.conflict('CNPJ já cadastrado');
+        throw ApiError.conflict('CNPJ já cadastrado', ErrorCodes.CNPJ_ALREADY_EXISTS);
       }
     }
 
@@ -118,13 +119,14 @@ export class AcademiasService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Academia não encontrada');
+      throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
     }
 
     // Verificar se há dependências
     if (existing._count.usuarios > 0 || existing._count.matriculas > 0) {
       throw ApiError.conflict(
-        'Academia possui usuários ou matrículas vinculadas. Desative-a em vez de excluir.'
+        'Academia possui usuários ou matrículas vinculadas. Desative-a em vez de excluir.',
+        ErrorCodes.ACADEMIA_HAS_LINKED_RECORDS
       );
     }
 
@@ -139,7 +141,7 @@ export class AcademiasService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Academia não encontrada');
+      throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
     }
 
     const academia = await prisma.academia.update({

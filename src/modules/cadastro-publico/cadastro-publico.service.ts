@@ -3,6 +3,7 @@ import { CadastroPublicoInput, AprovarCadastroInput } from './cadastro-publico.s
 import { Prisma, Perfil } from '@prisma/client';
 import { hashPassword } from '../../shared/utils/password-hash';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 
 interface AprovadorContext {
   id: string;
@@ -24,7 +25,10 @@ export class CadastroPublicoService {
     });
 
     if (cadastroPendente) {
-      throw new Error('Já existe um cadastro pendente com este email ou CPF. Aguarde a aprovação.');
+      throw ApiError.conflict(
+        'Já existe um cadastro pendente com este email ou CPF. Aguarde a aprovação.',
+        ErrorCodes.CADASTRO_PUBLICO_PENDING_EXISTS
+      );
     }
 
     // Verificar se já existe pessoa cadastrada com mesmo email ou CPF
@@ -38,7 +42,10 @@ export class CadastroPublicoService {
     });
 
     if (pessoaExistente) {
-      throw new Error('Este email ou CPF já está cadastrado no sistema.');
+      throw ApiError.conflict(
+        'Este email ou CPF já está cadastrado no sistema.',
+        ErrorCodes.CADASTRO_PUBLICO_ALREADY_REGISTERED
+      );
     }
 
     // Criar cadastro pendente
@@ -125,20 +132,20 @@ export class CadastroPublicoService {
   async aprovar(id: string, data: AprovarCadastroInput, aprovador: AprovadorContext) {
     // Verificar permissões granulares por papel solicitado
     if (data.papel === 'ADMIN' && aprovador.perfil !== Perfil.ADMIN) {
-      throw ApiError.forbidden('Apenas ADMIN pode criar outros ADMINs');
+      throw ApiError.forbidden('Apenas ADMIN pode criar outros ADMINs', ErrorCodes.AUTH_ONLY_ADMIN_CAN_CREATE_ADMIN);
     }
     if (data.papel === 'PROFESSOR' && aprovador.perfil === Perfil.RECEPCIONISTA) {
-      throw ApiError.forbidden('Recepcionista não pode criar Professores');
+      throw ApiError.forbidden('Recepcionista não pode criar Professores', ErrorCodes.AUTH_RECEPCIONISTA_CANNOT_CREATE_PROFESSOR);
     }
     if (data.papel === 'RECEPCIONISTA' && aprovador.perfil !== Perfil.ADMIN) {
-      throw ApiError.forbidden('Apenas ADMIN pode criar Recepcionistas');
+      throw ApiError.forbidden('Apenas ADMIN pode criar Recepcionistas', ErrorCodes.AUTH_ONLY_ADMIN_CAN_CREATE_RECEPCIONISTA);
     }
 
     // Validar que não-admins globais só criam usuários na sua própria academia
     const isGlobalAdmin = aprovador.perfil === Perfil.ADMIN && !aprovador.academiaId;
     const academiaIdEfetiva = isGlobalAdmin ? data.academiaId : aprovador.academiaId;
     if (!isGlobalAdmin && data.academiaId && data.academiaId !== aprovador.academiaId) {
-      throw ApiError.forbidden('Você não pode criar usuários em outra academia');
+      throw ApiError.forbidden('Você não pode criar usuários em outra academia', ErrorCodes.AUTH_CANNOT_CREATE_USER_OTHER_ACADEMIA);
     }
 
     const cadastro = await prisma.cadastroPendente.findUnique({
@@ -146,11 +153,11 @@ export class CadastroPublicoService {
     });
 
     if (!cadastro) {
-      throw new Error('Cadastro não encontrado');
+      throw ApiError.notFound('Cadastro não encontrado', ErrorCodes.CADASTRO_PUBLICO_NOT_FOUND);
     }
 
     if (cadastro.status !== 'PENDENTE') {
-      throw new Error('Este cadastro já foi processado');
+      throw ApiError.conflict('Este cadastro já foi processado', ErrorCodes.CADASTRO_PUBLICO_ALREADY_PROCESSED);
     }
 
     // Mesclar dados do cadastro com dados editados (se houver)
@@ -171,14 +178,20 @@ export class CadastroPublicoService {
     if (data.dadosEditados?.email && data.dadosEditados.email !== cadastro.email) {
       const emailExiste = await prisma.pessoa.findUnique({ where: { email: data.dadosEditados.email } });
       if (emailExiste) {
-        throw new Error('O email informado já está cadastrado no sistema');
+        throw ApiError.conflict(
+          'O email informado já está cadastrado no sistema',
+          ErrorCodes.CADASTRO_PUBLICO_EMAIL_ALREADY_EXISTS
+        );
       }
     }
 
     if (data.dadosEditados?.cpf && data.dadosEditados.cpf !== cadastro.cpf) {
       const cpfExiste = await prisma.pessoa.findUnique({ where: { cpf: data.dadosEditados.cpf } });
       if (cpfExiste) {
-        throw new Error('O CPF informado já está cadastrado no sistema');
+        throw ApiError.conflict(
+          'O CPF informado já está cadastrado no sistema',
+          ErrorCodes.CADASTRO_PUBLICO_CPF_ALREADY_EXISTS
+        );
       }
     }
 
@@ -188,7 +201,10 @@ export class CadastroPublicoService {
         where: { id: data.professorResponsavelId },
       });
       if (!professorExiste) {
-        throw new Error('Professor responsável não encontrado');
+        throw ApiError.notFound(
+          'Professor responsável não encontrado',
+          ErrorCodes.CADASTRO_PUBLICO_PROFESSOR_NOT_FOUND
+        );
       }
     }
 
@@ -316,11 +332,11 @@ export class CadastroPublicoService {
     });
 
     if (!cadastro) {
-      throw new Error('Cadastro não encontrado');
+      throw ApiError.notFound('Cadastro não encontrado', ErrorCodes.CADASTRO_PUBLICO_NOT_FOUND);
     }
 
     if (cadastro.status !== 'PENDENTE') {
-      throw new Error('Este cadastro já foi processado');
+      throw ApiError.conflict('Este cadastro já foi processado', ErrorCodes.CADASTRO_PUBLICO_ALREADY_PROCESSED);
     }
 
     return prisma.cadastroPendente.update({
@@ -353,24 +369,15 @@ export class CadastroPublicoService {
       return {
         encontrado: false,
         status: null,
-        mensagem: 'Nenhum cadastro encontrado com este ID.',
       };
     }
-
-    const mensagens = {
-      PENDENTE: 'Seu cadastro está aguardando aprovação.',
-      APROVADO: 'Seu cadastro foi aprovado! Em breve você receberá mais informações.',
-      REJEITADO: cadastro.motivoRejeicao
-        ? `Seu cadastro foi rejeitado. Motivo: ${cadastro.motivoRejeicao}`
-        : 'Seu cadastro foi rejeitado.',
-    };
 
     return {
       encontrado: true,
       id: cadastro.id,
       nome: cadastro.nome,
       status: cadastro.status,
-      mensagem: mensagens[cadastro.status],
+      motivoRejeicao: cadastro.motivoRejeicao,
       dataCadastro: cadastro.createdAt,
     };
   }

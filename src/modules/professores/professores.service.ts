@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Modalidade } from '@prisma/client';
 import { CreateProfessorInput, UpdateProfessorInput } from './professores.schemas';
@@ -110,7 +111,7 @@ export class ProfessoresService {
     });
 
     if (!professor) {
-      throw ApiError.notFound('Professor não encontrado');
+      throw ApiError.notFound('Professor não encontrado', ErrorCodes.PROFESSOR_NOT_FOUND);
     }
 
     return professor as unknown as ProfessorWithAcademias;
@@ -124,7 +125,7 @@ export class ProfessoresService {
       });
 
       if (existingCpf) {
-        throw ApiError.conflict('CPF já cadastrado');
+        throw ApiError.conflict('CPF já cadastrado', ErrorCodes.CPF_ALREADY_EXISTS);
       }
     }
 
@@ -135,7 +136,7 @@ export class ProfessoresService {
       });
 
       if (existingEmail) {
-        throw ApiError.conflict('Email já cadastrado');
+        throw ApiError.conflict('Email já cadastrado', ErrorCodes.EMAIL_ALREADY_EXISTS);
       }
     }
 
@@ -147,11 +148,11 @@ export class ProfessoresService {
       });
 
       if (!aluno) {
-        throw ApiError.notFound('Aluno não encontrado');
+        throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
       }
 
       if (aluno.professor) {
-        throw ApiError.conflict('Este aluno já está vinculado a um professor');
+        throw ApiError.conflict('Este aluno já está vinculado a um professor', ErrorCodes.ALUNO_ALREADY_LINKED_TO_PROFESSOR);
       }
     }
 
@@ -197,7 +198,7 @@ export class ProfessoresService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Professor não encontrado');
+      throw ApiError.notFound('Professor não encontrado', ErrorCodes.PROFESSOR_NOT_FOUND);
     }
 
     // Verificar se CPF já existe em outra pessoa (se fornecido)
@@ -207,7 +208,7 @@ export class ProfessoresService {
       });
 
       if (existingCpf) {
-        throw ApiError.conflict('CPF já cadastrado');
+        throw ApiError.conflict('CPF já cadastrado', ErrorCodes.CPF_ALREADY_EXISTS);
       }
     }
 
@@ -218,7 +219,7 @@ export class ProfessoresService {
       });
 
       if (existingEmail) {
-        throw ApiError.conflict('Email já cadastrado');
+        throw ApiError.conflict('Email já cadastrado', ErrorCodes.EMAIL_ALREADY_EXISTS);
       }
     }
 
@@ -274,13 +275,14 @@ export class ProfessoresService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Professor não encontrado');
+      throw ApiError.notFound('Professor não encontrado', ErrorCodes.PROFESSOR_NOT_FOUND);
     }
 
     // Verificar se há dependências
     if (existing._count.aulasComoProfessor > 0) {
       throw ApiError.conflict(
-        'Professor possui aulas vinculadas. Desative-o em vez de excluir.'
+        'Professor possui aulas vinculadas. Desative-o em vez de excluir.',
+        ErrorCodes.PROFESSOR_HAS_LINKED_AULAS
       );
     }
 
@@ -301,7 +303,7 @@ export class ProfessoresService {
     });
 
     if (!professor) {
-      throw ApiError.notFound('Professor não encontrado');
+      throw ApiError.notFound('Professor não encontrado', ErrorCodes.PROFESSOR_NOT_FOUND);
     }
 
     const academia = await prisma.academia.findUnique({
@@ -309,7 +311,7 @@ export class ProfessoresService {
     });
 
     if (!academia) {
-      throw ApiError.notFound('Academia não encontrada');
+      throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
     }
 
     // Verificar se já existe vínculo
@@ -333,7 +335,7 @@ export class ProfessoresService {
         });
         return;
       }
-      throw ApiError.conflict('Professor já está vinculado a esta academia');
+      throw ApiError.conflict('Professor já está vinculado a esta academia', ErrorCodes.PROFESSOR_ALREADY_LINKED_TO_ACADEMIA);
     }
 
     await prisma.professorAcademia.create({
@@ -355,7 +357,7 @@ export class ProfessoresService {
     });
 
     if (!vinculo) {
-      throw ApiError.notFound('Vínculo não encontrado');
+      throw ApiError.notFound('Vínculo não encontrado', ErrorCodes.VINCULO_NOT_FOUND);
     }
 
     await prisma.professorAcademia.update({
@@ -372,7 +374,7 @@ export class ProfessoresService {
     });
 
     if (!existing) {
-      throw ApiError.notFound('Professor não encontrado');
+      throw ApiError.notFound('Professor não encontrado', ErrorCodes.PROFESSOR_NOT_FOUND);
     }
 
     const professor = await prisma.professor.update({

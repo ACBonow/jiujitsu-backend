@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { ApiError } from '../utils/api-error';
 import { error } from '../utils/api-response';
 import { config } from '../../config/env';
+import { ErrorCodes } from '../constants/error-codes';
 
 const logError = (req: Request, err: Error, extra?: Record<string, unknown>) => {
   console.error(
@@ -27,6 +28,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   if (err instanceof ApiError) {
     const body: Record<string, unknown> = { success: false, message: err.message };
     if (err.code) body.code = err.code;
+    if (err.params) body.params = err.params;
     return res.status(err.statusCode).json(body);
   }
 
@@ -38,30 +40,30 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
         const target = (err.meta?.target as string[]) || [];
         const field = target[0] || 'campo';
         return res.status(409).json(
-          error(`${field} já existe no sistema`)
+          error(`${field} já existe no sistema`, undefined, ErrorCodes.DUPLICATE_FIELD)
         );
 
       case 'P2025':
         // Record not found
         return res.status(404).json(
-          error('Registro não encontrado')
+          error('Registro não encontrado', undefined, ErrorCodes.RECORD_NOT_FOUND)
         );
 
       case 'P2003':
         // Foreign key constraint failed
         return res.status(400).json(
-          error('Registro relacionado não encontrado')
+          error('Registro relacionado não encontrado', undefined, ErrorCodes.RELATED_RECORD_NOT_FOUND)
         );
 
       case 'P2014':
         // Required relation violation
         return res.status(400).json(
-          error('Relacionamento obrigatório não preenchido')
+          error('Relacionamento obrigatório não preenchido', undefined, ErrorCodes.REQUIRED_RELATION_MISSING)
         );
 
       default:
         return res.status(400).json(
-          error('Erro ao processar operação no banco de dados')
+          error('Erro ao processar operação no banco de dados', undefined, ErrorCodes.DATABASE_ERROR)
         );
     }
   }
@@ -69,20 +71,20 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   // Prisma Validation Error — não expor detalhes internos do schema (já logado acima)
   if (err instanceof Prisma.PrismaClientValidationError) {
     return res.status(400).json(
-      error('Dados inválidos para a operação')
+      error('Dados inválidos para a operação', undefined, ErrorCodes.INVALID_OPERATION_DATA)
     );
   }
 
   // JWT Errors
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json(
-      error('Token inválido')
+      error('Token inválido', undefined, ErrorCodes.AUTH_TOKEN_INVALID)
     );
   }
 
   if (err.name === 'TokenExpiredError') {
     return res.status(401).json(
-      error('Token expirado')
+      error('Token expirado', undefined, ErrorCodes.TOKEN_EXPIRED)
     );
   }
 
@@ -93,6 +95,6 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
     : 'Erro interno do servidor';
 
   return res.status(statusCode).json(
-    error(message)
+    error(message, undefined, ErrorCodes.INTERNAL_SERVER_ERROR)
   );
 };

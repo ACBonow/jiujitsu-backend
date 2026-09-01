@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { assertAcademiaAccess } from '../../shared/utils/academia-scope';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Modalidade, StatusMatricula, StatusMensalidade, FormaPagamento, Perfil } from '@prisma/client';
@@ -178,7 +179,7 @@ export class PlanosService {
 
   async findById(id: string): Promise<PlanoResponse> {
     const plano = await prisma.plano.findUnique({ where: { id } });
-    if (!plano) throw ApiError.notFound('Plano não encontrado');
+    if (!plano) throw ApiError.notFound('Plano não encontrado', ErrorCodes.PLANO_NOT_FOUND);
     return { ...plano, valorBase: Number(plano.valorBase) };
   }
 
@@ -189,7 +190,7 @@ export class PlanosService {
 
   async update(id: string, data: UpdatePlanoInput): Promise<PlanoResponse> {
     const existing = await prisma.plano.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Plano não encontrado');
+    if (!existing) throw ApiError.notFound('Plano não encontrado', ErrorCodes.PLANO_NOT_FOUND);
 
     const plano = await prisma.plano.update({ where: { id }, data });
     return { ...plano, valorBase: Number(plano.valorBase) };
@@ -201,9 +202,9 @@ export class PlanosService {
       include: { _count: { select: { matriculas: true } } },
     });
 
-    if (!existing) throw ApiError.notFound('Plano não encontrado');
+    if (!existing) throw ApiError.notFound('Plano não encontrado', ErrorCodes.PLANO_NOT_FOUND);
     if (existing._count.matriculas > 0) {
-      throw ApiError.conflict('Plano possui matrículas vinculadas. Desative-o em vez de excluir.');
+      throw ApiError.conflict('Plano possui matrículas vinculadas. Desative-o em vez de excluir.', ErrorCodes.PLANO_HAS_LINKED_MATRICULAS);
     }
 
     await prisma.plano.delete({ where: { id } });
@@ -263,7 +264,7 @@ export class MatriculasService {
       },
     });
 
-    if (!matricula) throw ApiError.notFound('Matrícula não encontrada');
+    if (!matricula) throw ApiError.notFound('Matrícula não encontrada', ErrorCodes.MATRICULA_NOT_FOUND);
 
     return {
       ...matricula,
@@ -275,15 +276,15 @@ export class MatriculasService {
   async create(data: CreateMatriculaInput): Promise<MatriculaResponse> {
     // Verificar se aluno existe
     const aluno = await prisma.aluno.findUnique({ where: { id: data.alunoId } });
-    if (!aluno) throw ApiError.notFound('Aluno não encontrado');
+    if (!aluno) throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
 
     // Verificar se academia existe
     const academia = await prisma.academia.findUnique({ where: { id: data.academiaId } });
-    if (!academia) throw ApiError.notFound('Academia não encontrada');
+    if (!academia) throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
 
     // Verificar se plano existe
     const plano = await prisma.plano.findUnique({ where: { id: data.planoId } });
-    if (!plano) throw ApiError.notFound('Plano não encontrado');
+    if (!plano) throw ApiError.notFound('Plano não encontrado', ErrorCodes.PLANO_NOT_FOUND);
 
     // Verificar se já existe matrícula ativa para este aluno nesta academia
     const matriculaExistente = await prisma.matricula.findFirst({
@@ -295,7 +296,7 @@ export class MatriculasService {
     });
 
     if (matriculaExistente) {
-      throw ApiError.conflict('Aluno já possui matrícula ativa nesta academia');
+      throw ApiError.conflict('Aluno já possui matrícula ativa nesta academia', ErrorCodes.ALUNO_ALREADY_HAS_ACTIVE_MATRICULA);
     }
 
     // Calcular valor final
@@ -331,7 +332,7 @@ export class MatriculasService {
 
   async update(id: string, data: UpdateMatriculaInput): Promise<MatriculaResponse> {
     const existing = await prisma.matricula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Matrícula não encontrada');
+    if (!existing) throw ApiError.notFound('Matrícula não encontrada', ErrorCodes.MATRICULA_NOT_FOUND);
 
     const matricula = await prisma.matricula.update({
       where: { id },
@@ -352,10 +353,10 @@ export class MatriculasService {
 
   async cancelar(id: string): Promise<MatriculaResponse> {
     const existing = await prisma.matricula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Matrícula não encontrada');
+    if (!existing) throw ApiError.notFound('Matrícula não encontrada', ErrorCodes.MATRICULA_NOT_FOUND);
 
     if (existing.status === 'CANCELADA') {
-      throw ApiError.badRequest('Matrícula já está cancelada');
+      throw ApiError.badRequest('Matrícula já está cancelada', ErrorCodes.MATRICULA_ALREADY_CANCELLED);
     }
 
     const matricula = await prisma.matricula.update({
@@ -447,7 +448,7 @@ export class MensalidadesService {
       },
     });
 
-    if (!mensalidade) throw ApiError.notFound('Mensalidade não encontrada');
+    if (!mensalidade) throw ApiError.notFound('Mensalidade não encontrada', ErrorCodes.MENSALIDADE_NOT_FOUND);
 
     return {
       ...mensalidade,
@@ -535,7 +536,7 @@ export class MensalidadesService {
 export class RegraPagamentoService {
   async getByAcademia(academiaId: string): Promise<RegraPagamentoResponse | null> {
     const academia = await prisma.academia.findUnique({ where: { id: academiaId } });
-    if (!academia) throw ApiError.notFound('Academia não encontrada');
+    if (!academia) throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
 
     const regra = await prisma.regraPagamentoAcademia.findUnique({ where: { academiaId } });
     return regra ? mapRegraPagamento(regra) : null;
@@ -543,7 +544,7 @@ export class RegraPagamentoService {
 
   async upsert(academiaId: string, data: RegraPagamentoInput): Promise<RegraPagamentoResponse> {
     const academia = await prisma.academia.findUnique({ where: { id: academiaId } });
-    if (!academia) throw ApiError.notFound('Academia não encontrada');
+    if (!academia) throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
 
     const regra = await prisma.regraPagamentoAcademia.upsert({
       where: { academiaId },
@@ -701,18 +702,18 @@ export class PagamentosService {
     });
 
     if (mensalidades.length !== mensalidadeIds.length) {
-      throw ApiError.notFound('Uma ou mais mensalidades não foram encontradas');
+      throw ApiError.notFound('Uma ou mais mensalidades não foram encontradas', ErrorCodes.MENSALIDADE_SOME_NOT_FOUND);
     }
 
     const academiaIds = new Set(mensalidades.map((m) => m.matricula.academiaId));
     if (academiaIds.size > 1) {
-      throw ApiError.badRequest('Todas as mensalidades selecionadas devem ser da mesma academia');
+      throw ApiError.badRequest('Todas as mensalidades selecionadas devem ser da mesma academia', ErrorCodes.MENSALIDADE_MUST_BE_SAME_ACADEMIA);
     }
 
     assertAcademiaAccess(currentUser, mensalidades[0].matricula.academiaId);
 
     if (mensalidades.some((m) => m.status === 'PAGO')) {
-      throw ApiError.badRequest('Uma ou mais mensalidades já estão pagas');
+      throw ApiError.badRequest('Uma ou mais mensalidades já estão pagas', ErrorCodes.MENSALIDADE_SOME_ALREADY_PAID);
     }
 
     return mensalidades;

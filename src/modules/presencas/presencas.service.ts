@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { startOfDay, endOfDay } from 'date-fns';
 import { CreatePresencaInput, RegistrarPresencasEmLoteInput } from './presencas.schemas';
@@ -72,7 +73,7 @@ export class PresencasService {
 
   async findByAula(aulaId: string): Promise<PresencaListResponse[]> {
     const aula = await prisma.aula.findUnique({ where: { id: aulaId } });
-    if (!aula) throw ApiError.notFound('Aula não encontrada');
+    if (!aula) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     const presencas = await prisma.presenca.findMany({
       where: { aulaId },
@@ -121,7 +122,7 @@ export class PresencasService {
     });
 
     if (!presenca) {
-      throw ApiError.notFound('Presença não encontrada');
+      throw ApiError.notFound('Presença não encontrada', ErrorCodes.PRESENCA_NOT_FOUND);
     }
 
     return presenca as unknown as PresencaResponse;
@@ -130,25 +131,26 @@ export class PresencasService {
   async create(data: CreatePresencaInput, usuarioId: string): Promise<PresencaResponse> {
     // Verificar se aula existe
     const aula = await prisma.aula.findUnique({ where: { id: data.aulaId } });
-    if (!aula) throw ApiError.notFound('Aula não encontrada');
+    if (!aula) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     // Presença só pode ser registrada em aulas em andamento ou concluídas
     if (aula.status !== 'EM_ANDAMENTO' && aula.status !== 'CONCLUIDA') {
       throw ApiError.unprocessable(
-        'Presença só pode ser registrada em aulas em andamento ou concluídas'
+        'Presença só pode ser registrada em aulas em andamento ou concluídas',
+        ErrorCodes.PRESENCA_ONLY_IN_PROGRESS_OR_COMPLETED
       );
     }
 
     // Verificar se aluno existe
     const aluno = await prisma.aluno.findUnique({ where: { id: data.alunoId } });
-    if (!aluno) throw ApiError.notFound('Aluno não encontrado');
+    if (!aluno) throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
 
     // Verificar se aluno tem matrícula ativa na academia da aula
     const matriculaAtiva = await prisma.matricula.findFirst({
       where: { alunoId: data.alunoId, academiaId: aula.academiaId, status: 'ATIVA' },
     });
     if (!matriculaAtiva) {
-      throw ApiError.unprocessable('Aluno não possui matrícula ativa nesta academia');
+      throw ApiError.unprocessable('Aluno não possui matrícula ativa nesta academia', ErrorCodes.ALUNO_NO_ACTIVE_MATRICULA);
     }
 
     // Verificar se já existe presença para este aluno nesta aula
@@ -162,7 +164,7 @@ export class PresencasService {
     });
 
     if (existingPresenca) {
-      throw ApiError.conflict('Presença já registrada para este aluno nesta aula');
+      throw ApiError.conflict('Presença já registrada para este aluno nesta aula', ErrorCodes.PRESENCA_ALREADY_REGISTERED);
     }
 
     // Registrar presença e incrementar contador de aulas desde promoção
@@ -230,11 +232,12 @@ export class PresencasService {
   ): Promise<{ registradas: number; jaExistentes: number }> {
     // Verificar se aula existe
     const aula = await prisma.aula.findUnique({ where: { id: data.aulaId } });
-    if (!aula) throw ApiError.notFound('Aula não encontrada');
+    if (!aula) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     if (aula.status !== 'EM_ANDAMENTO' && aula.status !== 'CONCLUIDA') {
       throw ApiError.unprocessable(
-        'Presença só pode ser registrada em aulas em andamento ou concluídas'
+        'Presença só pode ser registrada em aulas em andamento ou concluídas',
+        ErrorCodes.PRESENCA_ONLY_IN_PROGRESS_OR_COMPLETED
       );
     }
 
@@ -300,12 +303,12 @@ export class PresencasService {
     });
 
     if (!presenca) {
-      throw ApiError.notFound('Presença não encontrada');
+      throw ApiError.notFound('Presença não encontrada', ErrorCodes.PRESENCA_NOT_FOUND);
     }
 
     // Se a aula já foi concluída, não permitir excluir presença
     if (presenca.aula.status === 'CONCLUIDA') {
-      throw ApiError.badRequest('Não é possível remover presença de aula já concluída');
+      throw ApiError.badRequest('Não é possível remover presença de aula já concluída', ErrorCodes.PRESENCA_CANNOT_REMOVE_FINISHED_AULA);
     }
 
     // Excluir presença e decrementar contador

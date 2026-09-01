@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { DiaSemana, CategoriaTurma, Modalidade, StatusAula } from '@prisma/client';
 import {
@@ -98,7 +99,7 @@ export class AulasService {
     });
 
     if (!template) {
-      throw ApiError.notFound('Template de aula não encontrado');
+      throw ApiError.notFound('Template de aula não encontrado', ErrorCodes.AULA_TEMPLATE_NOT_FOUND);
     }
 
     return template as unknown as TemplateAulaResponse;
@@ -109,7 +110,7 @@ export class AulasService {
     const academia = await prisma.academia.findUnique({
       where: { id: data.academiaId },
     });
-    if (!academia) throw ApiError.notFound('Academia não encontrada');
+    if (!academia) throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
 
     // Verificar se professor existe e está vinculado à academia
     const professorAcademia = await prisma.professorAcademia.findUnique({
@@ -121,7 +122,7 @@ export class AulasService {
       },
     });
     if (!professorAcademia || !professorAcademia.ativo) {
-      throw ApiError.badRequest('Professor não está vinculado a esta academia');
+      throw ApiError.badRequest('Professor não está vinculado a esta academia', ErrorCodes.PROFESSOR_NOT_LINKED_TO_ACADEMIA);
     }
 
     const template = await prisma.templateAula.create({
@@ -149,7 +150,7 @@ export class AulasService {
     data: UpdateTemplateAulaInput
   ): Promise<TemplateAulaResponse> {
     const existing = await prisma.templateAula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Template de aula não encontrado');
+    if (!existing) throw ApiError.notFound('Template de aula não encontrado', ErrorCodes.AULA_TEMPLATE_NOT_FOUND);
 
     // Se mudar o professor, verificar se está vinculado à academia
     if (data.professorId && data.professorId !== existing.professorId) {
@@ -162,7 +163,7 @@ export class AulasService {
         },
       });
       if (!professorAcademia || !professorAcademia.ativo) {
-        throw ApiError.badRequest('Professor não está vinculado a esta academia');
+        throw ApiError.badRequest('Professor não está vinculado a esta academia', ErrorCodes.PROFESSOR_NOT_LINKED_TO_ACADEMIA);
       }
     }
 
@@ -180,7 +181,7 @@ export class AulasService {
 
   async deleteTemplate(id: string): Promise<void> {
     const existing = await prisma.templateAula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Template de aula não encontrado');
+    if (!existing) throw ApiError.notFound('Template de aula não encontrado', ErrorCodes.AULA_TEMPLATE_NOT_FOUND);
 
     await prisma.templateAula.delete({ where: { id } });
   }
@@ -241,7 +242,7 @@ export class AulasService {
     });
 
     if (!aula) {
-      throw ApiError.notFound('Aula não encontrada');
+      throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
     }
 
     return aula as unknown as AulaWithCounts;
@@ -252,13 +253,13 @@ export class AulasService {
     const academia = await prisma.academia.findUnique({
       where: { id: data.academiaId },
     });
-    if (!academia) throw ApiError.notFound('Academia não encontrada');
+    if (!academia) throw ApiError.notFound('Academia não encontrada', ErrorCodes.ACADEMIA_NOT_FOUND);
 
     // Verificar se professor existe
     const professor = await prisma.professor.findUnique({
       where: { id: data.professorId },
     });
-    if (!professor) throw ApiError.notFound('Professor não encontrado');
+    if (!professor) throw ApiError.notFound('Professor não encontrado', ErrorCodes.PROFESSOR_NOT_FOUND);
 
     const aula = await prisma.aula.create({
       data: {
@@ -283,11 +284,11 @@ export class AulasService {
 
   async updateAula(id: string, data: UpdateAulaInput): Promise<AulaResponse> {
     const existing = await prisma.aula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Aula não encontrada');
+    if (!existing) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     // Se a aula já foi concluída ou cancelada, não permitir edição
     if (existing.status === 'CONCLUIDA' || existing.status === 'CANCELADA') {
-      throw ApiError.badRequest('Não é possível editar uma aula concluída ou cancelada');
+      throw ApiError.badRequest('Não é possível editar uma aula concluída ou cancelada', ErrorCodes.AULA_CANNOT_EDIT_FINISHED);
     }
 
     const aula = await prisma.aula.update({
@@ -309,10 +310,10 @@ export class AulasService {
       include: { _count: { select: { presencas: true, reservas: true } } },
     });
 
-    if (!existing) throw ApiError.notFound('Aula não encontrada');
+    if (!existing) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     if (existing._count.presencas > 0) {
-      throw ApiError.conflict('Aula possui presenças registradas. Cancele-a em vez de excluir.');
+      throw ApiError.conflict('Aula possui presenças registradas. Cancele-a em vez de excluir.', ErrorCodes.AULA_HAS_PRESENCAS);
     }
 
     // Excluir reservas e a aula
@@ -324,10 +325,10 @@ export class AulasService {
 
   async cancelarAula(id: string): Promise<AulaResponse> {
     const existing = await prisma.aula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Aula não encontrada');
+    if (!existing) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     if (existing.status === 'CONCLUIDA') {
-      throw ApiError.badRequest('Não é possível cancelar uma aula já concluída');
+      throw ApiError.badRequest('Não é possível cancelar uma aula já concluída', ErrorCodes.AULA_CANNOT_CANCEL_FINISHED);
     }
 
     const aula = await prisma.$transaction(async (tx) => {
@@ -352,10 +353,10 @@ export class AulasService {
 
   async iniciarAula(id: string): Promise<AulaResponse> {
     const existing = await prisma.aula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Aula não encontrada');
+    if (!existing) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     if (existing.status !== 'AGENDADA') {
-      throw ApiError.badRequest('Apenas aulas agendadas podem ser iniciadas');
+      throw ApiError.badRequest('Apenas aulas agendadas podem ser iniciadas', ErrorCodes.AULA_ONLY_SCHEDULED_CAN_START);
     }
 
     const aula = await prisma.aula.update({
@@ -372,10 +373,10 @@ export class AulasService {
 
   async concluirAula(id: string): Promise<AulaResponse> {
     const existing = await prisma.aula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Aula não encontrada');
+    if (!existing) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     if (existing.status !== 'EM_ANDAMENTO') {
-      throw ApiError.unprocessable('Apenas aulas em andamento podem ser concluídas');
+      throw ApiError.unprocessable('Apenas aulas em andamento podem ser concluídas', ErrorCodes.AULA_ONLY_IN_PROGRESS_CAN_COMPLETE);
     }
 
     const aula = await prisma.$transaction(async (tx) => {
@@ -411,21 +412,21 @@ export class AulasService {
 
   async definirSubstituto(id: string, data: DefinirSubstitutoInput): Promise<AulaResponse> {
     const existing = await prisma.aula.findUnique({ where: { id } });
-    if (!existing) throw ApiError.notFound('Aula não encontrada');
+    if (!existing) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     if (existing.status === 'CONCLUIDA' || existing.status === 'CANCELADA') {
-      throw ApiError.badRequest('Não é possível alterar professor de aula concluída ou cancelada');
+      throw ApiError.badRequest('Não é possível alterar professor de aula concluída ou cancelada', ErrorCodes.AULA_CANNOT_CHANGE_PROFESSOR_FINISHED);
     }
 
     if (data.professorSubstitutoId) {
       if (data.professorSubstitutoId === existing.professorId) {
-        throw ApiError.badRequest('Professor substituto não pode ser o mesmo que o titular');
+        throw ApiError.badRequest('Professor substituto não pode ser o mesmo que o titular', ErrorCodes.PROFESSOR_SUBSTITUTE_SAME_AS_TITULAR);
       }
       const professor = await prisma.professor.findUnique({
         where: { id: data.professorSubstitutoId },
       });
       if (!professor || !professor.ativo) {
-        throw ApiError.notFound('Professor substituto não encontrado ou inativo');
+        throw ApiError.notFound('Professor substituto não encontrado ou inativo', ErrorCodes.PROFESSOR_SUBSTITUTE_NOT_FOUND);
       }
     }
 
@@ -452,7 +453,7 @@ export class AulasService {
     });
 
     if (templates.length === 0) {
-      throw ApiError.badRequest('Nenhum template de aula ativo encontrado para esta academia');
+      throw ApiError.badRequest('Nenhum template de aula ativo encontrado para esta academia', ErrorCodes.AULA_TEMPLATE_NONE_ACTIVE);
     }
 
     const aulasParaCriar: any[] = [];

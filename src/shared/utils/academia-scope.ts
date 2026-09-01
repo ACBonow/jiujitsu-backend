@@ -32,6 +32,7 @@ export function assertAcademiaAccess(currentUser: AuthUser, targetAcademiaId: st
   const isGlobalAdmin = currentUser.perfil === Perfil.ADMIN && !currentUser.academiaId;
   if (!isGlobalAdmin && currentUser.academiaId !== targetAcademiaId) {
     const { ApiError } = require('./api-error');
-    throw ApiError.forbidden('Você não tem acesso a esta academia');
+    const { ErrorCodes } = require('../constants/error-codes');
+    throw ApiError.forbidden('Você não tem acesso a esta academia', ErrorCodes.ACADEMIA_ACCESS_DENIED);
   }
 }

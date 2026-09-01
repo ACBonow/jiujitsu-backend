@@ -1,5 +1,6 @@
 import { prisma } from '../../config/database';
 import { ApiError } from '../../shared/utils/api-error';
+import { ErrorCodes } from '../../shared/constants/error-codes';
 import { PaginationInput, getPaginationParams } from '../../shared/utils/pagination';
 import { Perfil, StatusReserva } from '@prisma/client';
 import { addMinutes, startOfDay, endOfDay } from 'date-fns';
@@ -150,7 +151,7 @@ export class ReservasService {
 
   async findByAula(aulaId: string): Promise<ReservaListResponse[]> {
     const aula = await prisma.aula.findUnique({ where: { id: aulaId } });
-    if (!aula) throw ApiError.notFound('Aula não encontrada');
+    if (!aula) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     // Verificação lazy: expira reservas vencidas antes de listar
     await this.verificarReservasExpiradas(aulaId);
@@ -200,7 +201,7 @@ export class ReservasService {
     });
 
     if (!reserva) {
-      throw ApiError.notFound('Reserva não encontrada');
+      throw ApiError.notFound('Reserva não encontrada', ErrorCodes.RESERVA_NOT_FOUND);
     }
 
     // Verificação lazy: expira reservas vencidas da mesma aula
@@ -248,16 +249,16 @@ export class ReservasService {
       },
     });
 
-    if (!aula) throw ApiError.notFound('Aula não encontrada');
+    if (!aula) throw ApiError.notFound('Aula não encontrada', ErrorCodes.AULA_NOT_FOUND);
 
     // Verificar se a aula não está cancelada
     if (aula.status === 'CANCELADA') {
-      throw ApiError.badRequest('Não é possível fazer reserva em aula cancelada');
+      throw ApiError.badRequest('Não é possível fazer reserva em aula cancelada', ErrorCodes.RESERVA_CANNOT_BOOK_CANCELLED_AULA);
     }
 
     // Verificar se a aula não é passada
     if (aula.dataHora < new Date()) {
-      throw ApiError.badRequest('Não é possível fazer reserva em aula passada');
+      throw ApiError.badRequest('Não é possível fazer reserva em aula passada', ErrorCodes.RESERVA_CANNOT_BOOK_PAST_AULA);
     }
 
     // Verificar se aluno existe
@@ -265,16 +266,16 @@ export class ReservasService {
       where: { id: data.alunoId },
       include: { pessoa: { include: { usuario: { select: { id: true, academiaId: true } } } } },
     });
-    if (!aluno) throw ApiError.notFound('Aluno não encontrado');
+    if (!aluno) throw ApiError.notFound('Aluno não encontrado', ErrorCodes.ALUNO_NOT_FOUND);
 
     // Aluno só pode criar reserva para si mesmo; gestores só dentro de sua academia
     if (currentUser.perfil === 'ALUNO') {
       if (aluno.pessoa.usuario?.id !== currentUser.id) {
-        throw ApiError.forbidden('Você só pode criar reservas para si mesmo');
+        throw ApiError.forbidden('Você só pode criar reservas para si mesmo', ErrorCodes.RESERVA_CAN_ONLY_CREATE_FOR_SELF);
       }
     } else if (currentUser.academiaId) {
       if (aula.academiaId !== currentUser.academiaId) {
-        throw ApiError.forbidden('Você não tem acesso a esta academia');
+        throw ApiError.forbidden('Você não tem acesso a esta academia', ErrorCodes.ACADEMIA_ACCESS_DENIED);
       }
     }
 
@@ -283,13 +284,15 @@ export class ReservasService {
       where: { alunoId: data.alunoId, academiaId: aula.academiaId, status: 'ATIVA' },
     });
     if (!matriculaAtiva) {
-      throw ApiError.unprocessable('Aluno não possui matrícula ativa nesta academia');
+      throw ApiError.unprocessable('Aluno não possui matrícula ativa nesta academia', ErrorCodes.ALUNO_NO_ACTIVE_MATRICULA);
     }
 
     // Verificar limite de faltas em reservas
     if (aluno.faltasReservas >= CONSTANTS.LIMITE_FALTAS_RESERVA) {
       throw ApiError.unprocessable(
-        `Aluno atingiu o limite de ${CONSTANTS.LIMITE_FALTAS_RESERVA} faltas em reservas e está temporariamente bloqueado`
+        `Aluno atingiu o limite de ${CONSTANTS.LIMITE_FALTAS_RESERVA} faltas em reservas e está temporariamente bloqueado`,
+        ErrorCodes.RESERVA_FALTAS_LIMIT_REACHED,
+        { limite: CONSTANTS.LIMITE_FALTAS_RESERVA }
       );
     }
 
@@ -304,7 +307,7 @@ export class ReservasService {
     });
 
     if (existingReserva) {
-      throw ApiError.conflict('Já existe uma reserva para este aluno nesta aula');
+      throw ApiError.conflict('Já existe uma reserva para este aluno nesta aula', ErrorCodes.RESERVA_ALREADY_EXISTS);
     }
 
     // Verificação lazy: expira reservas vencidas antes de contar vagas
@@ -379,26 +382,26 @@ export class ReservasService {
     });
 
     if (!reserva) {
-      throw ApiError.notFound('Reserva não encontrada');
+      throw ApiError.notFound('Reserva não encontrada', ErrorCodes.RESERVA_NOT_FOUND);
     }
 
     // Verificar propriedade: aluno só cancela a própria reserva; gestores cancelam na sua academia
     const ehDono = reserva.aluno.pessoa.usuario?.id === currentUser.id;
     const ehGestor = ['ADMIN', 'PROFESSOR', 'RECEPCIONISTA'].includes(currentUser.perfil);
     if (!ehDono && !ehGestor) {
-      throw ApiError.forbidden('Você não pode cancelar esta reserva');
+      throw ApiError.forbidden('Você não pode cancelar esta reserva', ErrorCodes.RESERVA_CANNOT_CANCEL_OTHERS);
     }
     if (ehGestor && currentUser.academiaId && reserva.aula.academiaId !== currentUser.academiaId) {
-      throw ApiError.forbidden('Você não tem acesso a esta academia');
+      throw ApiError.forbidden('Você não tem acesso a esta academia', ErrorCodes.ACADEMIA_ACCESS_DENIED);
     }
 
     if (reserva.status === 'CANCELADA') {
-      throw ApiError.badRequest('Reserva já está cancelada');
+      throw ApiError.badRequest('Reserva já está cancelada', ErrorCodes.RESERVA_ALREADY_CANCELLED);
     }
 
     // Se a aula já ocorreu, não pode cancelar
     if (reserva.aula.dataHora < new Date()) {
-      throw ApiError.badRequest('Não é possível cancelar reserva de aula passada');
+      throw ApiError.badRequest('Não é possível cancelar reserva de aula passada', ErrorCodes.RESERVA_CANNOT_CANCEL_PAST_AULA);
     }
 
     const reservaAtualizada = await prisma.$transaction(async (tx) => {
@@ -471,11 +474,11 @@ export class ReservasService {
     });
 
     if (!reserva) {
-      throw ApiError.notFound('Reserva não encontrada');
+      throw ApiError.notFound('Reserva não encontrada', ErrorCodes.RESERVA_NOT_FOUND);
     }
 
     if (reserva.status !== 'ESPERA') {
-      throw ApiError.badRequest('Apenas reservas em espera podem ser confirmadas manualmente');
+      throw ApiError.badRequest('Apenas reservas em espera podem ser confirmadas manualmente', ErrorCodes.RESERVA_ONLY_WAITING_CAN_CONFIRM);
     }
 
     const reservaAtualizada = await prisma.reserva.update({
@@ -513,7 +516,7 @@ export class ReservasService {
     const reserva = await prisma.reserva.findUnique({ where: { id } });
 
     if (!reserva) {
-      throw ApiError.notFound('Reserva não encontrada');
+      throw ApiError.notFound('Reserva não encontrada', ErrorCodes.RESERVA_NOT_FOUND);
     }
 
     await prisma.reserva.delete({ where: { id } });
