@@ -381,6 +381,41 @@ export class CadastroPublicoService {
       dataCadastro: cadastro.createdAt,
     };
   }
+
+  /**
+   * Verificar status do cadastro por email (público — usado por quem não
+   * guardou o ID retornado no pré-cadastro). Retorna o cadastro mais recente
+   * para o email informado.
+   */
+  async verificarStatusPorEmail(email: string) {
+    const cadastro = await prisma.cadastroPendente.findFirst({
+      where: { email },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        nome: true,
+        status: true,
+        createdAt: true,
+        motivoRejeicao: true,
+      },
+    });
+
+    if (!cadastro) {
+      return {
+        encontrado: false,
+        status: null,
+      };
+    }
+
+    return {
+      encontrado: true,
+      id: cadastro.id,
+      nome: cadastro.nome,
+      status: cadastro.status,
+      motivoRejeicao: cadastro.motivoRejeicao,
+      dataCadastro: cadastro.createdAt,
+    };
+  }
 }
 
 export const cadastroPublicoService = new CadastroPublicoService();

@@ -29,6 +29,16 @@ router.post(
 );
 
 /**
+ * GET /api/public/cadastro/status?email=...
+ * Verificar status do cadastro mais recente por email
+ */
+router.get(
+  '/public/cadastro/status',
+  createLimiter,
+  cadastroPublicoController.verificarStatusPorEmail.bind(cadastroPublicoController)
+);
+
+/**
  * GET /api/public/cadastro/:id/status
  * Verificar status do cadastro por ID
  */

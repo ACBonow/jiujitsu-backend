@@ -57,6 +57,7 @@ export interface AlunoListResponse {
   status: StatusAluno;
   pessoa: {
     nome: string;
+    email: string | null;
     telefone: string | null;
   };
   _count?: {

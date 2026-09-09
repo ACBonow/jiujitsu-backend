@@ -62,6 +62,7 @@ export class AlunosService {
           pessoa: {
             select: {
               nome: true,
+              email: true,
               telefone: true,
             },
           },

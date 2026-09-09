@@ -62,6 +62,7 @@ export class ProfessoresService {
           pessoa: {
             select: {
               nome: true,
+              email: true,
               telefone: true,
             },
           },

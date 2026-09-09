@@ -40,6 +40,7 @@ export interface ProfessorListResponse {
   ativo: boolean;
   pessoa: {
     nome: string;
+    email: string | null;
     telefone: string | null;
   };
   aluno?: {

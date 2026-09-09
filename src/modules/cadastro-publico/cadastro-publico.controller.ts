@@ -44,6 +44,25 @@ export class CadastroPublicoController {
   }
 
   /**
+   * GET /api/public/cadastro/status?email=...
+   * Verificar status do cadastro por email (público)
+   */
+  async verificarStatusPorEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const email = req.query.email as string | undefined;
+
+      if (!email) {
+        throw ApiError.badRequest('Parâmetro "email" é obrigatório', ErrorCodes.VALIDATION_ERROR_QUERY);
+      }
+
+      const resultado = await cadastroPublicoService.verificarStatusPorEmail(email);
+      return res.json(success(resultado));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
    * GET /api/admin/cadastros-pendentes
    * Listar cadastros pendentes (admin)
    */
