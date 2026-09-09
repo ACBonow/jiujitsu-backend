@@ -20,9 +20,6 @@
       "dest": "/api/index.ts"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
   "crons": [
     {
       "path": "/api/cron/atualizar-mensalidades",
