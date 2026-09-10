@@ -23,49 +23,6 @@ Sistema de gestão de academias de artes marciais. Backend Node.js/TypeScript co
 4. `STATE-MACHINES.md` → entender ciclos de vida
 5. `API.md` → contratos de interface
 
-## Stack
-
-- Node.js + TypeScript strict
-- Express 4
-- Prisma 5 + PostgreSQL (Neon)
-- Validação: Zod
-- Auth: JWT (access 15min + refresh 7d) + bcrypt
-- Deploy: Vercel serverless
-
-## Estrutura de módulo
-
-```
-src/modules/<nome>/
-  <nome>.routes.ts      # Router Express + middleware de auth/roles
-  <nome>.controller.ts  # req/res → chama service → retorna ApiResponse
-  <nome>.service.ts     # lógica de negócio pura
-  <nome>.repository.ts  # queries Prisma
-  <nome>.schemas.ts     # schemas Zod de validação
-```
-
-## Comandos
-
-```bash
-npm run dev              # tsx watch (desenvolvimento)
-npm run build            # tsup + prisma generate
-npm run prisma:migrate   # rodar migrations
-npm run prisma:seed      # popular banco com dados de teste
-npm run prisma:studio    # Prisma Studio (GUI do banco)
-npm test                 # rodar testes
-npm run test:watch       # testes em modo watch
-npm run test:coverage    # cobertura de código
-```
-
-## Padrão de resposta API
-
-```typescript
-// Sucesso
-{ success: true, data: T, pagination?: PaginationMeta }
-
-// Erro
-{ success: false, message: string, errors?: Record<string, string[]> }
-```
-
 ## Regras importantes
 
 1. Nunca deletar fisicamente registros de `Pessoa`, `Aluno`, `Professor`, `Academia` — usar `ativo = false`
@@ -75,12 +32,3 @@ npm run test:coverage    # cobertura de código
 5. Validar com Zod em todo endpoint que recebe body — usar `validateBody` middleware
 6. Autorizar com `authenticate` + `authorize([Perfil.X, ...])` em todas as rotas protegidas
 7. Lógica de negócio fica no Service, nunca no Controller ou Repository
-
-## TDD
-
-Antes de implementar uma feature nova:
-1. Leia a especificação no `docs/SDD.md`
-2. Escreva os testes em `src/tests/`
-3. Rode `npm test` para ver falhar (RED)
-4. Implemente o código
-5. Rode `npm test` para ver passar (GREEN)
